@@ -1,0 +1,2648 @@
+Directory structure:
+└── src/
+    ├── index.html
+    ├── main.ts
+    ├── styles.css
+    └── app/
+        ├── app.config.ts
+        ├── app.css
+        ├── app.html
+        ├── app.routes.ts
+        ├── app.spec.ts
+        ├── app.ts
+        ├── core/
+        │   ├── guards/
+        │   │   ├── adminGuard/
+        │   │   │   ├── adminguard-guard.spec.ts
+        │   │   │   └── adminguard-guard.ts
+        │   │   └── authGuard/
+        │   │       ├── auth-guard-guard.spec.ts
+        │   │       └── auth-guard-guard.ts
+        │   └── service/
+        │       ├── authService/
+        │       │   ├── auth-service.spec.ts
+        │       │   └── auth-service.ts
+        │       ├── categoryServices/
+        │       │   ├── category-services.spec.ts
+        │       │   └── category-services.ts
+        │       └── productServices/
+        │           ├── product-service.spec.ts
+        │           └── product-service.ts
+        ├── features/
+        │   ├── admin/
+        │   │   ├── admin.routes.ts
+        │   │   ├── admin-category/
+        │   │   │   ├── admin-category.css
+        │   │   │   ├── admin-category.html
+        │   │   │   ├── admin-category.spec.ts
+        │   │   │   └── admin-category.ts
+        │   │   ├── admin-product/
+        │   │   │   ├── admin-product.css
+        │   │   │   ├── admin-product.html
+        │   │   │   ├── admin-product.spec.ts
+        │   │   │   └── admin-product.ts
+        │   │   └── dashboard/
+        │   │       ├── dashboard.css
+        │   │       ├── dashboard.html
+        │   │       ├── dashboard.spec.ts
+        │   │       └── dashboard.ts
+        │   ├── auth/
+        │   │   ├── auth.routes.ts
+        │   │   ├── pages/
+        │   │   │   ├── forgot-password/
+        │   │   │   │   ├── forgot-password.css
+        │   │   │   │   ├── forgot-password.html
+        │   │   │   │   ├── forgot-password.spec.ts
+        │   │   │   │   └── forgot-password.ts
+        │   │   │   ├── login-pages/
+        │   │   │   │   ├── login-pages.css
+        │   │   │   │   ├── login-pages.html
+        │   │   │   │   ├── login-pages.spec.ts
+        │   │   │   │   └── login-pages.ts
+        │   │   │   ├── register-pages/
+        │   │   │   │   ├── register-pages.css
+        │   │   │   │   ├── register-pages.html
+        │   │   │   │   ├── register-pages.spec.ts
+        │   │   │   │   └── register-pages.ts
+        │   │   │   └── reset-password/
+        │   │   │       ├── reset-password.css
+        │   │   │       ├── reset-password.html
+        │   │   │       ├── reset-password.spec.ts
+        │   │   │       └── reset-password.ts
+        │   │   └── validators/
+        │   │       ├── checkPassword.Validators.ts
+        │   │       └── passwordMatch.validators.ts
+        │   └── home/
+        │       ├── home.routes.ts
+        │       └── pages/
+        │           └── home-pages/
+        │               ├── home-pages.css
+        │               ├── home-pages.html
+        │               ├── home-pages.spec.ts
+        │               └── home-pages.ts
+        └── shared/
+            └── components/
+                └── navbar/
+                    ├── navbar.css
+                    ├── navbar.html
+                    ├── navbar.spec.ts
+                    └── navbar.ts
+
+================================================
+FILE: index.html
+================================================
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Frontend25226</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>
+
+
+
+================================================
+FILE: main.ts
+================================================
+import { bootstrapApplication } from '@angular/platform-browser';
+import { appConfig } from './app/app.config';
+import { App } from './app/app';
+import "zone.js"
+
+bootstrapApplication(App, appConfig)
+  .catch((err) => console.error(err));
+
+
+
+================================================
+FILE: styles.css
+================================================
+/* You can add global styles to this file, and also import other style files */
+
+
+
+================================================
+FILE: app/app.config.ts
+================================================
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+
+import { routes } from './app.routes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideBrowserGlobalErrorListeners(),
+    provideRouter(routes),
+    provideHttpClient(),
+    provideZoneChangeDetection()
+  ]
+};
+
+
+================================================
+FILE: app/app.css
+================================================
+[Empty file]
+
+
+================================================
+FILE: app/app.html
+================================================
+
+<router-outlet />
+
+
+================================================
+FILE: app/app.routes.ts
+================================================
+import { Routes } from '@angular/router';
+import { adminguardGuard } from './core/guards/adminGuard/adminguard-guard';
+import { authGuardGuard } from './core/guards/authGuard/auth-guard-guard';
+
+export const routes: Routes = [
+  { path: '', pathMatch: 'full', redirectTo: 'auth/login' },
+  {
+    path: "auth",
+    canMatch: [authGuardGuard],
+    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.authRoutes)
+  },
+  {
+    path: "admin",
+    canMatch: [adminguardGuard],
+    loadChildren: () => import('./features/admin/admin.routes').then((m) => m.adminRoutes)
+  },
+  { path: "", loadChildren: () => import("./features/home/home.routes").then((m) => m.homeRoutes) },
+];
+
+
+
+================================================
+FILE: app/app.spec.ts
+================================================
+import { TestBed } from '@angular/core/testing';
+import { App } from './app';
+
+describe('App', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [App],
+    }).compileComponents();
+  });
+
+  it('should create the app', () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    expect(app).toBeTruthy();
+  });
+
+  it('should render title', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, Frontend--25-2-26');
+  });
+});
+
+
+
+================================================
+FILE: app/app.ts
+================================================
+import { Component, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+
+@Component({
+  selector: 'app-root',
+  imports: [RouterOutlet],
+  templateUrl: './app.html',
+  styleUrl: './app.css'
+})
+export class App {
+  protected readonly title = signal('Frontend--25-2-26');
+}
+
+
+
+================================================
+FILE: app/core/guards/adminGuard/adminguard-guard.spec.ts
+================================================
+import { TestBed } from '@angular/core/testing';
+import { CanMatchFn } from '@angular/router';
+
+import { adminguardGuard } from './adminguard-guard';
+
+describe('adminguardGuard', () => {
+  const executeGuard: CanMatchFn = (...guardParameters) => 
+      TestBed.runInInjectionContext(() => adminguardGuard(...guardParameters));
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+  });
+
+  it('should be created', () => {
+    expect(executeGuard).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/core/guards/adminGuard/adminguard-guard.ts
+================================================
+import { inject } from '@angular/core';
+import { CanMatchFn, Router } from '@angular/router';
+import { AuthService } from '../../service/authService/auth-service';
+
+export const adminguardGuard: CanMatchFn = (route, segments) => {
+
+  const authService = inject(AuthService);
+  const router = inject(Router)
+
+  const role = authService.getUserRole();
+
+  if(role === 'admin'){
+    return true
+  }
+
+  // NOT admin -> redirect to a public/user route, NOT /admin
+  // router.navigate(['/home-success']);
+  return false;
+};
+
+
+
+================================================
+FILE: app/core/guards/authGuard/auth-guard-guard.spec.ts
+================================================
+import { TestBed } from '@angular/core/testing';
+import { CanMatchFn } from '@angular/router';
+
+import { authGuardGuard } from './auth-guard-guard';
+
+describe('authGuardGuard', () => {
+  const executeGuard: CanMatchFn = (...guardParameters) => 
+      TestBed.runInInjectionContext(() => authGuardGuard(...guardParameters));
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+  });
+
+  it('should be created', () => {
+    expect(executeGuard).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/core/guards/authGuard/auth-guard-guard.ts
+================================================
+import { CanMatchFn, Router } from '@angular/router';
+import { AuthService } from '../../service/authService/auth-service';
+import { inject } from '@angular/core';
+
+export const authGuardGuard: CanMatchFn = (route, segments) => {
+  
+  const authService = inject(AuthService);
+  const router = inject(Router)
+
+  if (authService.isLoggedIn()) {
+    return true
+  }
+
+return router.createUrlTree(['/auth/login']);};
+
+
+================================================
+FILE: app/core/service/authService/auth-service.spec.ts
+================================================
+import { TestBed } from '@angular/core/testing';
+
+import { AuthService } from './auth-service';
+
+describe('AuthService', () => {
+  let service: AuthService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(AuthService);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/core/service/authService/auth-service.ts
+================================================
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { jwtDecode } from 'jwt-decode';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class AuthService {
+  constructor(private http: HttpClient) { }
+  // get api of signup
+  getRegisterDetails(name: string, email: string, password: string, role: string) {
+    const url = "http://localhost:3000/api/users/signup"
+    return this.http.post(url, {
+      name,
+      email,
+      password,
+      role
+    });
+  }
+
+  // get api of login
+  getLoginDetails(email: string, password: string) {
+    const url = "http://localhost:3000/api/users/login"
+    return this.http.post(url, {
+      email,
+      password
+    });
+  }
+
+
+  // get api of forgot-password
+  getForgotPassword(email: string) {
+    const url = "http://localhost:3000/api/users/forgot-password"
+    return this.http.post(url, {
+      email
+    });
+  }
+
+  // get api of reset-password
+  getResetPassword(token: string, password: string) {
+    const url = `http://localhost:3000/api/users/reset-password/${token}`
+    return this.http.post(url, {
+      newPassword: password
+    })
+  }
+
+
+  getToken() {
+    return localStorage.getItem('accessToken');
+  }
+
+  isLoggedIn(): Boolean {
+    return !!this.getToken();
+  }
+
+  getUserRole(): string | null {
+    const token = this.getToken();
+    if(!token) return null
+
+    const decoded: any = jwtDecode(token);
+    return decoded.role
+  }
+}
+
+
+
+================================================
+FILE: app/core/service/categoryServices/category-services.spec.ts
+================================================
+import { TestBed } from '@angular/core/testing';
+
+import { CategoryServices } from './category-services';
+
+describe('CategoryServices', () => {
+  let service: CategoryServices;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(CategoryServices);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/core/service/categoryServices/category-services.ts
+================================================
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class CategoryServices {
+  constructor(private http: HttpClient) { }
+
+  // get all categories
+  getCategories() {
+    const url = "http://localhost:3000/api/users/category/getAll"
+    return this.http.get(url, {});
+  }
+
+  // Create category
+  createCategory(name: string) {
+    const url = "http://localhost:3000/api/users/category"
+    return this.http.post(url, { name });
+  }
+
+  updateCategory(name: string, id: string) {
+    const url = `http://localhost:3000/api/users/category/${id}`
+    return this.http.put(url, { name });
+  }
+
+  deleteCategory(id: string) {
+    const url = `http://localhost:3000/api/users/category/${id}`
+    // console.log(url)
+    return this.http.delete(url);
+  }
+}
+
+
+================================================
+FILE: app/core/service/productServices/product-service.spec.ts
+================================================
+import { TestBed } from '@angular/core/testing';
+
+import { ProductService } from './product-service';
+
+describe('ProductService', () => {
+  let service: ProductService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(ProductService);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/core/service/productServices/product-service.ts
+================================================
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class ProductService {
+  constructor(private http: HttpClient) { }
+
+  getCategories(){
+    const url = "http://localhost:3000/api/users/category/getAll"
+    return this.http.get(url, {})
+  }
+
+  //get all products
+  getProducts() {
+    const url = "http://localhost:3000/api/users/product/getAll"
+    return this.http.get(url, {})
+  }
+
+  //get by Id
+  getProductsById(id: string) {
+    const url = `http://localhost:3000/api/users/product/getById/${id}`
+    return this.http.get(url, {})
+  }
+
+  // Create Products
+  createProducts(productData: string) {
+    const url = "http://localhost:3000/api/users/product"
+    return this.http.post(url, { productData }
+    );
+  }
+
+  updateProducts(name: string, id: string) {
+    const url = `http://localhost:3000/api/users/product/${id}`
+    return this.http.put(url, { name })
+  }
+
+  deleteProducts(id: string) {
+    const url = `http://localhost:3000/api/users/product/${id}`
+    return this.http.delete(url)
+  }
+}
+
+
+
+================================================
+FILE: app/features/admin/admin.routes.ts
+================================================
+import { Routes } from "@angular/router";
+
+export const adminRoutes: Routes = [
+    {path: '',loadComponent: () => import('./dashboard/dashboard').then((c) => c.Dashboard),
+        children: [
+            {
+                path:"categories", loadComponent: () => import("./admin-category/admin-category").then((c) => c.AdminCategory)
+            },
+            {
+                path:"products", loadComponent: () => import("./admin-product/admin-product").then((c) => c.AdminProduct)
+            }
+        ]
+    }
+];
+
+
+================================================
+FILE: app/features/admin/admin-category/admin-category.css
+================================================
+.category-container {
+    width: 90%;
+    margin: auto;
+    /* padding: 8px; */
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.title {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Form Card */
+
+.form-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.form-group input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+/* Buttons */
+
+.btn-group {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.add-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.cancel-btn {
+    background-color: #6c757d;
+    color: white;
+}
+
+.edit-btn {
+    background-color: #ffc107;
+    color: black;
+
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Table */
+
+.table-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead {
+    background: #343a40;
+    color: white;
+}
+
+th,
+td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+
+================================================
+FILE: app/features/admin/admin-category/admin-category.html
+================================================
+<div class="category-container">
+
+    <h2 class="title">Category Management</h2>
+
+    <!-- Add / Update Category Form -->
+    <div class="form-card">
+        <form [formGroup]="categoryForm" (ngSubmit)="saveCategory()">
+
+            <div class="form-group">
+                <label>Category Name</label>
+                <input type="text" name="name" formControlName="name" placeholder="Enter category name" required />
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn add-btn">
+                    {{selectedCategoryId ? 'Update Category' : 'Add Category'}}
+                    <!-- Add Category -->
+                </button>
+
+                <button type="button" class="btn cancel-btn" (click)="resetForm()">
+                    Cancel
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+
+    <!-- Category Table -->
+    <div class="table-card">
+
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Category Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @for(cat of categories; track cat._id){
+
+                <tr>
+                    <td>{{$index + 1}}</td>
+                    <td>{{cat.name}}</td>
+
+                    <td class="actions">
+
+                        <button class="btn edit-btn" (click)="editCategory(cat)">
+                            Edit
+                        </button>
+
+                        <button class="btn delete-btn" (click)="deleteCategory(cat._id)">
+                            Delete
+                        </button>
+
+                    </td>
+                </tr>
+
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+================================================
+FILE: app/features/admin/admin-category/admin-category.spec.ts
+================================================
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { AdminCategory } from './admin-category';
+
+describe('AdminCategory', () => {
+  let component: AdminCategory;
+  let fixture: ComponentFixture<AdminCategory>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [AdminCategory]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(AdminCategory);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/features/admin/admin-category/admin-category.ts
+================================================
+import { Component } from '@angular/core';
+import { CategoryServices } from '../../../core/service/categoryServices/category-services';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-admin-category',
+  imports: [ReactiveFormsModule],
+  templateUrl: './admin-category.html',
+  styleUrl: './admin-category.css',
+})
+export class AdminCategory {
+  constructor(
+    private categoryService: CategoryServices,
+    private CategoryDetail: FormBuilder
+  ) { }
+  categoryForm!: FormGroup
+  categories: any[] = [];
+  // update function by id
+  selectedCategoryId: string | null = null
+
+  ngOnInit(): void {
+    this.categoryForm = this.CategoryDetail.group(
+      {
+        name: ['']
+      }
+    );
+    this.getCategory();
+  }
+
+  getCategory() {
+    this.categoryService.getCategories().subscribe({
+      next: (_data: any) => {
+        // console.log(_data.data.categories);
+        this.categories = _data.data.categories || [];
+      }
+    })
+  }
+  saveCategory() {
+
+    // console.log("Submit function called")
+    const value = this.categoryForm.value
+    if (this.selectedCategoryId) {
+      // console.log("Api should called")
+
+      // Update
+      this.categoryService.updateCategory(value?.name, this.selectedCategoryId).subscribe({
+        next: (cat: any) => {
+          // console.log("------2")
+          this.getCategory();
+          alert("Category Updated");
+        },
+        error: (cat: any) => {
+          alert("Not updated")
+        }
+      })
+
+    } else {
+
+      // Create
+      this.categoryService.createCategory(value?.name).subscribe({
+        next: (_data: any) => {
+          // console.log(_data.data.categoryObj)
+          // console.log(this.categories)
+          this.categories.push(_data.data.categoryObj);
+          // this.getCategory();
+          this.categoryForm.reset();
+          alert("category added")
+        },
+        error: (_error: any) => {
+          alert("Category not found")
+        }
+      })
+    }
+  }
+
+  resetForm() {
+    this.categoryForm.reset();
+    this.selectedCategoryId = null;
+  }
+
+  editCategory(cat: any) {
+    // const value = this.categoryForm.value
+    // this.categoryService.updateCategory(value?.name, cat?.id).subscribe({
+    //   next: (cat: any) => {
+    //     alert("Category Updated");
+    //   },
+    //   error: (cat: any) => {
+    //     alert("Not Updated")
+    //   }
+    // })
+
+    this.selectedCategoryId = cat._id;
+    this.categoryForm.patchValue({
+      name: cat.name
+    })
+  }
+
+  deleteCategory(id: string) {
+    this.categoryService.deleteCategory(id).subscribe({
+      next: (_data: any) => {
+        this.getCategory()
+        alert("category Deleted")
+      },
+      error: (_data: any) => {
+        alert("Some error")
+      }
+    })
+  }
+
+}
+
+
+
+================================================
+FILE: app/features/admin/admin-product/admin-product.css
+================================================
+.admin-container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.product-form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.product-form input {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+/* Container styling (optional for spacing) */
+.product-form select {
+  width: 100%;
+  padding: 12px 14px;
+  margin-top: 10px;
+
+  border: 1px solid #ddd;
+  border-radius: 8px;
+
+  font-size: 14px;
+  color: #333;
+  background-color: #fff;
+
+  outline: none;
+  cursor: pointer;
+
+  transition: all 0.3s ease;
+}
+
+/* Hover effect */
+.product-form select:hover {
+  border-color: #4f46e5;
+}
+
+/* Focus effect (important) */
+.product-form select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+/* Disabled state */
+.product-form select:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+/* Option styling (limited support but okay) */
+.product-form option {
+  padding: 10px;
+}
+
+.product-form button {
+  padding: 10px;
+  border: none;
+  background: #4caf50;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.product-form button:hover {
+  background: #45a049;
+}
+
+.product-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.product-table th,
+.product-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+.product-table th {
+  background: #f4f4f4;
+}
+
+.product-table img {
+  border-radius: 6px;
+}
+
+button {
+  margin: 2px;
+  padding: 6px 10px;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+button:first-child {
+  background: #2196f3;
+  color: white;
+}
+
+button:last-child {
+  background: #f44336;
+  color: white;
+}
+
+
+================================================
+FILE: app/features/admin/admin-product/admin-product.html
+================================================
+<div class="admin-container">
+
+    <h2>ðŸ“¦ Admin Product Management</h2>
+
+    <!-- Add Product Form -->
+    <form [formGroup]="productForm" (ngSubmit)="addProduct()" class="product-form">
+
+        <input type="text" placeholder="Product Name" formControlName="name" />
+        <input type="number" placeholder="Price" formControlName="price" />
+        <select formControlName="categoryId" required>
+            <option [value]="null">Select Category</option>
+
+            @for(cat of categories; track cat._id) {
+            <option [value]="cat._id">{{ cat.name }}</option>
+            }
+        </select>
+        <input type="text" placeholder="Image URL" formControlName="image" />
+
+        <button type="submit">
+            {{ isEditMode ? 'Update Product' : 'Add Product' }}
+        </button>
+
+    </form>
+
+    <!-- Product List -->
+    <table class="product-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Category</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @for(prod of products; track prod._id) {
+
+            <tr>
+                <td>{{$index + 1}}</td>
+                <td>
+                    <img [src]="prod.image" alt="img" width="50" />
+                </td>
+                <td>{{ prod.name }}</td>
+                <td>â‚¹{{ prod.price }}</td>
+                <td>{{ prod.categoryId?.name }}</td>
+                <td>
+                    <button (click)="editProduct(prod)">Edit</button>
+                    <button (click)="deleteProduct(prod._id)">Delete</button>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+
+</div>
+
+
+================================================
+FILE: app/features/admin/admin-product/admin-product.spec.ts
+================================================
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { AdminProduct } from './admin-product';
+
+describe('AdminProduct', () => {
+  let component: AdminProduct;
+  let fixture: ComponentFixture<AdminProduct>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [AdminProduct]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(AdminProduct);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/features/admin/admin-product/admin-product.ts
+================================================
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ProductService } from '../../../core/service/productServices/product-service';
+
+@Component({
+  selector: 'app-admin-product',
+  imports: [ReactiveFormsModule],
+  templateUrl: './admin-product.html',
+  styleUrl: './admin-product.css',
+})
+export class AdminProduct {
+  constructor(
+    private productService: ProductService,
+    private ProductDetail: FormBuilder
+  ) { }
+  productForm!: FormGroup
+  products: any[] = []
+  isEditMode = false
+  selectedProductById: string | null = null
+
+  categories: any[] = [];
+
+  ngOnInit(): void {
+    this.productForm = this.ProductDetail.group(
+      {
+        name: [''],
+        price: [''],
+        categoryId: [null],
+        image: ['']
+      }
+    );
+    this.getProduct();
+    this.getCategories();
+  }
+
+  getCategories() {
+    this.productService.getCategories().subscribe({
+      next: (_data: any) => {
+        console.log(_data.data.categories)
+        this.categories = _data.data.categories;
+      }
+    })
+  }
+
+  getProduct() {
+    this.productService.getProducts().subscribe({
+      next: (_data: any) => {
+        console.log(_data.data.productObj)
+        this.products = _data.data.productObj;
+      }
+    })
+  }
+
+  getProdById(id: string) {
+    this.productService.getProductsById(id).subscribe({
+      next: (_data: any) => {
+        this.getProduct();
+        alert("Product Gotted")
+      },
+      error: (_error: any) => {
+        alert("Not Found")
+      }
+    })
+  }
+
+  addProduct() {
+    const value = this.productForm.value
+    console.log("FORM DATA:", value);
+    if (!value.categoryId) {
+      alert("Please select a category");
+      return;
+    }
+    if (this.selectedProductById) {
+      this.productService.updateProducts(value, this.selectedProductById).subscribe({
+        next: (_data: any) => {
+          this.getProduct();
+          this.isEditMode = false
+          alert("Product Update")
+        },
+        error: (_error: any) => {
+          alert("Not Updated")
+        }
+      })
+    } else {
+      // console.log(value)
+      this.productService.createProducts(value).subscribe({
+        next: (_data: any) => {
+          // console.log(_data.data.productObj)
+          this.products.push(_data.data.productObj);
+          this.productForm.reset();
+          alert("Category Added")
+        },
+        error: (_error: any) => {
+          alert("Product not found")
+        }
+      })
+    }
+  }
+
+  editProduct(prod: any) {
+    this.isEditMode = true
+    this.selectedProductById = prod._id;
+
+    this.productForm.patchValue({
+      name: prod.name,
+      price: prod.price,
+      categoryId: prod.categoryId,
+      image: prod.image
+    });
+  }
+
+
+  deleteProduct(id: any) {
+    this.productService.deleteProducts(id).subscribe({
+      next: (_data: any) => {
+        this.getProduct();
+        alert("Product Deleted");
+      },
+      error: (_error: any) => {
+        alert("Some Error");
+      }
+    })
+  }
+}
+
+
+
+================================================
+FILE: app/features/admin/dashboard/dashboard.css
+================================================
+.menu-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 16px;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+    /* margin-right: 56px; */
+
+}
+
+.dropbtn {
+    background-color: #3498db;
+    color: white;
+    padding: 10px 16px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f1f1f1;
+    min-width: 180px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 10px 14px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {
+    background-color: #ddd;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+
+================================================
+FILE: app/features/admin/dashboard/dashboard.html
+================================================
+<div class="menu-container">
+    <h2>Admin Dashboard</h2>
+    <div class="dropdown">
+
+        <button class="dropbtn">
+            Manage Menu â–¼
+        </button>
+
+        <div class="dropdown-content">
+
+            <a routerLink="categories">Manage Categories</a>
+
+            <a routerLink="products">Manage Products</a>
+
+        </div>
+
+    </div>
+</div>
+
+<br>
+
+<router-outlet></router-outlet>
+
+
+================================================
+FILE: app/features/admin/dashboard/dashboard.spec.ts
+================================================
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { Dashboard } from './dashboard';
+
+describe('Dashboard', () => {
+  let component: Dashboard;
+  let fixture: ComponentFixture<Dashboard>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Dashboard]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(Dashboard);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/features/admin/dashboard/dashboard.ts
+================================================
+import { Component } from '@angular/core';
+import { RouterLink, RouterOutlet } from '@angular/router';
+
+@Component({
+  selector: 'app-dashboard',
+  imports: [RouterOutlet, RouterLink],
+  templateUrl: './dashboard.html',
+  styleUrl: './dashboard.css',
+})
+export class Dashboard {
+
+}
+
+
+
+================================================
+FILE: app/features/auth/auth.routes.ts
+================================================
+import { Routes } from '@angular/router';
+
+export const authRoutes: Routes = [
+    {path:"register", loadComponent: () => import('./pages/register-pages/register-pages').then((c) => c.RegisterPages) },
+    // {path: "", loadComponent: () => import('./pages/login-pages/login-pages').then((c) => c.LoginPages)},
+    {path: "login", loadComponent: () => import('./pages/login-pages/login-pages').then((c) => c.LoginPages)},
+    {path:"forgot-password", loadComponent: () => import('./pages/forgot-password/forgot-password').then((c) => c.ForgotPassword)},
+    {path:"reset-password/:token", loadComponent: () => import('./pages/reset-password/reset-password').then((c) => c.ResetPassword)}
+];
+
+
+
+================================================
+FILE: app/features/auth/pages/forgot-password/forgot-password.css
+================================================
+/* Full page background */
+.forgot-container {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Card */
+.forgot-card {
+  background: #ffffff;
+  padding: 40px;
+  width: 380px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  text-align: center;
+}
+
+/* Heading */
+.forgot-card h2 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+/* Description text */
+.forgot-card p {
+  font-size: 14px;
+  color: #777;
+  margin-bottom: 25px;
+}
+
+/* Input field */
+.forgot-card input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.forgot-card input:focus {
+  border-color: #4facfe;
+  box-shadow: 0 0 5px rgba(79,172,254,0.4);
+}
+
+/* Button */
+.forgot-card button {
+  width: 100%;
+  padding: 12px;
+  background: #4facfe;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.forgot-card button:hover {
+  background: #2f8df5;
+}
+
+/* Back to login link */
+.back-login {
+  margin-top: 15px;
+}
+
+.back-login a {
+  text-decoration: none;
+  font-size: 14px;
+  color: #4facfe;
+}
+
+.back-login a:hover {
+  text-decoration: underline;
+}
+
+
+================================================
+FILE: app/features/auth/pages/forgot-password/forgot-password.html
+================================================
+<div class="forgot-container">
+    <div class="forgot-card">
+        <h2>Forgot Password......</h2>
+        <p>Enter your email to receive a reset link</p>
+
+        <form [formGroup]="forgotForm" (ngSubmit)="sentResetLink()">
+
+            <div>
+                <label>Email --</label>
+                <input type="email" placeholder="Enter the Email" formControlName="email" />
+            </div>
+
+            <button type="submit">Sent Reset Link</button>
+        </form>
+        
+        <div class="back-login">
+            <a routerLink="/login">Back to Login</a>
+        </div>
+    </div>
+</div>
+
+
+================================================
+FILE: app/features/auth/pages/forgot-password/forgot-password.spec.ts
+================================================
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { ForgotPassword } from './forgot-password';
+
+describe('ForgotPassword', () => {
+  let component: ForgotPassword;
+  let fixture: ComponentFixture<ForgotPassword>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ForgotPassword]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(ForgotPassword);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/features/auth/pages/forgot-password/forgot-password.ts
+================================================
+import { Component } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AuthService } from '../../../../core/service/authService/auth-service';
+import { RouterLink } from '@angular/router';
+
+
+@Component({
+  selector: 'app-forgot-password',
+  imports: [ReactiveFormsModule,RouterLink],
+  templateUrl: './forgot-password.html',
+  styleUrl: './forgot-password.css',
+})
+export class ForgotPassword {
+  constructor(
+    private forgotDetails: FormBuilder,
+    private auth: AuthService,
+  ) { }
+
+  email: string = "";
+  forgotForm: any;
+
+  ngOnInit() {
+    this.forgotForm = this.forgotDetails.group(
+      {
+        email: ['', [Validators.required, Validators.email]]
+      }
+    )
+  }
+
+  sentResetLink() {
+    const value = this.forgotForm.value;
+    this.auth.getForgotPassword(value?.email).subscribe(
+      {
+        next: (_data: any) => {
+          alert("Reset link sent to your email")
+        },
+        error: (_data: any) => {
+          console.log(_data)
+          alert(_data.error.message);
+        }
+      }
+    )
+  }
+}
+
+
+
+================================================
+FILE: app/features/auth/pages/login-pages/login-pages.css
+================================================
+/* Page background */
+.body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-family: 'Segoe UI', sans-serif;
+
+  background: linear-gradient(135deg,#667eea,#764ba2, #d05045);
+  background-size: 400% 400%;
+  animation: bgMove 10s ease infinite;
+}
+
+/* Background animation */
+@keyframes bgMove{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+/* Login card */
+.form-container{
+  width:380px;
+  padding: 35px;
+
+  background: rgba(255,255,255,0.95);
+  border-radius:14px;
+
+  box-shadow:0 15px 35px rgba(0,0,0,0.25);
+
+  backdrop-filter: blur(8px);
+
+  animation: cardAppear 0.6s ease;
+}
+
+@keyframes cardAppear{
+  from{
+    opacity:0;
+    transform:translateY(20px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+/* Title */
+.form-container h2{
+  text-align:center;
+  margin-bottom:25px;
+  color:#333;
+}
+
+/* Input group */
+.input-group{
+  margin-bottom:16px;
+}
+
+.input-group label{
+  font-size:14px;
+  color:#555;
+}
+
+.input-group input{
+  width:93%;
+  padding:12px;
+  margin-top:6px;
+
+  border:1px solid #ddd;
+  border-radius:8px;
+
+  outline:none;
+  transition:0.25s;
+}
+
+/* Input focus effect */
+.input-group input:focus{
+  border-color:#667eea;
+  box-shadow:0 0 6px rgba(102,126,234,0.4);
+}
+
+/* forgot css */
+.forgot-password {
+  text-align: right;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.forgot-password a {
+  font-size: 15px;
+  color: #007bff;
+  text-decoration: none;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+
+/* Login button */
+.login-btn{
+  width:100%;
+  padding:12px;
+
+  border:none;
+  border-radius:8px;
+
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  color:white;
+
+  font-size:15px;
+  font-weight:600;
+
+  cursor:pointer;
+
+  transition:0.3s;
+}
+
+.login-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 18px rgba(0,0,0,0.25);
+}
+
+/* Divider */
+.divider{
+  display:flex;
+  align-items:center;
+  margin:22px 0;
+}
+
+.divider::before,
+.divider::after{
+  content:"";
+  flex:1;
+  border-bottom:1px solid #ddd;
+}
+
+.divider span{
+  margin:0 10px;
+  font-size:13px;
+  color:#777;
+}
+
+/* Google Button */
+.googleButton{
+  width:100%;
+  padding:13px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+
+  border:none;
+  border-radius:10px;
+
+  font-size:15px;
+  font-weight:600;
+  color:white;
+
+  background: linear-gradient(270deg,#4285F4,#EA4335,#FBBC05,#34A853);
+  background-size:600% 600%;
+
+  cursor:pointer;
+
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  animation: gradientMove 6s ease infinite;
+}
+
+.googleButton img{
+  width:20px;
+  height:20px;
+
+  background:white;
+  border-radius:50%;
+  padding:3px;
+}
+
+.googleButton:hover{
+  transform:translateY(-3px);
+  box-shadow:0 8px 20px rgba(0,0,0,0.25);
+}
+
+.googleButton:active{
+  transform:scale(0.96);
+}
+
+/* Gradient animation */
+@keyframes gradientMove{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+
+
+================================================
+FILE: app/features/auth/pages/login-pages/login-pages.html
+================================================
+<div class="body">
+    <div class="form-container">
+        <h2>Login</h2>
+
+        <form [formGroup]="loginForm" (ngSubmit)="login()" novalidate>
+
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" placeholder="Enter your email" required formControlName="email">
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" placeholder="Enter password" formControlName="password">
+
+                @let password = loginForm.get('password');
+                @if(password?.touched && password?.errors?.['required']){
+                <small>* Password is required</small>
+                }
+
+                @if(password?.touched && (password?.errors?.['minlength'] || password?.errors?.['minLength'])){
+                <small>* Minimum 5 characters required</small>
+                }
+
+                @if(password?.touched && password?.errors?.['specialChar']){
+                <small>* Password must contain a special character</small>
+                }
+                @if(password?.touched && password?.errors?.['uppercase']){
+                <small>* Password must contain a Uppercase Letter</small>
+                }
+            </div>
+            <div class="forgot-password">
+                <a routerLink="/forgot-password">Forgot Password ?</a>
+            </div>
+
+            <button type="submit" class="login-btn">Login</button>
+
+            <div class="divider">
+                <span>OR</span>
+            </div>
+
+            <button type="button" class="googleButton" (click)="loginWithGoogle()"><img
+                    src="https://developers.google.com/identity/images/g-logo.png" alt="Google">Login With Google
+            </button>
+        </form>
+    </div>
+</div>
+
+
+================================================
+FILE: app/features/auth/pages/login-pages/login-pages.spec.ts
+================================================
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { LoginPages } from './login-pages';
+
+describe('LoginPages', () => {
+  let component: LoginPages;
+  let fixture: ComponentFixture<LoginPages>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [LoginPages]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(LoginPages);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/features/auth/pages/login-pages/login-pages.ts
+================================================
+import { Component, inject } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { checkPasswordValidation } from '../../validators/checkPassword.Validators';
+import { AuthService } from '../../../../core/service/authService/auth-service';
+import { Router, RouterLink } from '@angular/router';
+
+@Component({
+  selector: 'app-login-pages',
+  imports: [ReactiveFormsModule,RouterLink],
+  templateUrl: './login-pages.html',
+  styleUrl: './login-pages.css',
+})
+export class LoginPages {
+  constructor(
+    private LoginDetails: FormBuilder,
+    private auth: AuthService,
+    private router: Router
+  ) { }
+
+  loginForm: any
+
+  ngOnInit() {
+    this.loginForm = this.LoginDetails.group(
+      {
+        email: ['', [Validators.required, Validators.maxLength(50), Validators.pattern('^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$')]],
+        password: ['', [Validators.required, Validators.minLength(5), checkPasswordValidation()]]
+      }
+    )
+  }
+
+  // private auth = inject(AuthService);
+  login() {
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.loginForm.value;
+    this.auth.getLoginDetails(value?.email, value?.password).subscribe({
+      next: (_data: any) => {
+        alert("Login Successfully");
+        this.router.navigate(['/home']);
+      },
+      error: (_error: any) => {
+        alert("Login failed")
+      }
+    })
+    
+  }
+  loginWithGoogle() {
+    window.location.href = "http://localhost:3000/auth/google", "_self"
+    console.log(window.open("http://localhost:3000/auth/google", "_self"))
+  }
+  // console.log(window.open("http://localhost:3000/auth/google","_self"))
+}
+
+
+
+================================================
+FILE: app/features/auth/pages/register-pages/register-pages.css
+================================================
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.body{
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+}
+
+.form-container{
+  background:white;
+  padding:30px;
+  width:400px;
+  border-radius:10px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.2);
+}
+
+.form-container h2{
+  text-align:center;
+  margin-bottom:20px;
+}
+
+.input-group{
+  margin-bottom:15px;
+  display:flex;
+  flex-direction:column;
+}
+
+.input-group small{
+  color: blueviolet;
+}
+
+.input-group label{
+  margin-bottom:5px;
+  font-weight:600;
+}
+
+.input-group input,
+.input-group select{
+  padding:10px;
+  border:1px solid #ccc;
+  border-radius:5px;
+  outline:none;
+  transition:0.3s;
+}
+
+.input-group input:focus,
+.input-group select:focus{
+  border-color:#667eea;
+}
+
+button{
+  width:100%;
+  padding:10px;
+  border:none;
+  background:#667eea;
+  color:white;
+  font-size:16px;
+  border-radius:5px;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+button:hover{
+  background:#5563d1;
+}
+
+
+================================================
+FILE: app/features/auth/pages/register-pages/register-pages.html
+================================================
+<div class="body">
+    <div class="form-container">
+        <h2>Register</h2>
+
+        <form [formGroup]="registerForm"  (ngSubmit)="register()" novalidate>
+            <div class="input-group">
+                <label>Name</label>
+                <input type="text" placeholder="Enter your name" required formControlName="name">
+            </div>
+
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" placeholder="Enter your email" required formControlName="email">
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" placeholder="Enter password" formControlName="password">
+
+                @let password = registerForm.get('password');
+                @if(password?.touched && password?.errors?.['required']){
+                <small>* Password is required</small>
+                }
+
+                @if(password?.touched && (password?.errors?.['minlength'] || password?.errors?.['minLength'])){
+                <small>* Minimum 5 characters required</small>
+                }
+
+                @if(password?.touched && password?.errors?.['specialChar']){
+                <small>* Password must contain a special character</small>
+                }
+                @if(password?.touched && password?.errors?.['uppercase']){
+                <small>* Password must contain a Uppercase Letter</small>
+                }
+            </div>
+
+            <div class="input-group">
+                <label>Confirm Password</label>
+
+                <input type="password" placeholder="Enter Confirm Password" formControlName="confirmPassword">
+
+                @let confirmPassword = registerForm.get('confirmPassword');
+
+                @if(confirmPassword?.touched && confirmPassword?.errors?.['required']){
+                <small>* Password is required</small>
+                }
+
+                @if(confirmPassword?.touched && registerForm.errors?.['passwordMisMatch']){
+                <small>Passwords do not match</small>
+                }
+            </div>
+
+            <div class="input-group">
+                <label>Role</label>
+                <select formControlName="role">
+                    <option value="">Select Role</option>
+                    <option>User</option>
+                    <option>Admin</option>
+                </select>
+            </div>
+
+            <button type="submit">Register</button>
+        </form>
+    </div>
+</div>
+
+
+
+================================================
+FILE: app/features/auth/pages/register-pages/register-pages.spec.ts
+================================================
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { RegisterPages } from './register-pages';
+
+describe('RegisterPages', () => {
+  let component: RegisterPages;
+  let fixture: ComponentFixture<RegisterPages>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [RegisterPages]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(RegisterPages);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/features/auth/pages/register-pages/register-pages.ts
+================================================
+import { Component, inject } from '@angular/core';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AuthService } from '../../../../core/service/authService/auth-service';
+import { checkPasswordValidation } from '../../validators/checkPassword.Validators';
+import { passwordMatchValidator } from '../../validators/passwordMatch.validators';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-register-pages',
+  imports: [ReactiveFormsModule],
+  templateUrl: './register-pages.html',
+  styleUrl: './register-pages.css',
+})
+export class RegisterPages {
+
+  constructor(
+    private RegisterDetail: FormBuilder,
+    private auth: AuthService,
+    private router: Router
+  ) { }          
+  registerForm: any;
+
+  ngOnInit() {
+    this.registerForm = this.RegisterDetail.group(
+      {
+        name: new FormControl('', [Validators.required]),
+        email: new FormControl('', [Validators.required, Validators.maxLength(50), Validators.pattern('^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$')]),
+        password: new FormControl('', [Validators.required, Validators.minLength(5), checkPasswordValidation()]),
+        confirmPassword: new FormControl('', [Validators.required]),
+        role: new FormControl('', [Validators.required])
+      },
+      {
+        validators: passwordMatchValidator('password', 'confirmPassword')
+      }
+    );
+  }
+
+  // private auth = inject(AuthService);                                    // i can also inject like this
+  register() {
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      alert('Invalid form');
+      return;
+    }
+    const value = this.registerForm.value;
+    this.auth.getRegisterDetails(value!.name, value!.email, value!.password, value!.role).subscribe({
+      next: (_data: any) => {
+        alert('User Registered');
+        this.router.navigate(['auth/login']);
+      },
+      error: (_err: any) => {
+        alert('Register failed. Already created Account');
+      }
+    });
+  }
+}
+
+
+
+================================================
+FILE: app/features/auth/pages/reset-password/reset-password.css
+================================================
+/* Full page background */
+.reset-container {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Card */
+.reset-card {
+  background: white;
+  padding: 40px;
+  width: 380px;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+/* Heading */
+.reset-card h2 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+/* Description */
+.reset-card p {
+  font-size: 14px;
+  color: #777;
+  margin-bottom: 25px;
+}
+
+/* Input fields */
+.reset-card input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 18px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.reset-card input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 5px rgba(102,126,234,0.5);
+}
+
+/* container for validation messages */
+.password-rules {
+  margin-top: 8px;
+  margin-bottom: 15px;
+  font-size: 13px;
+}
+
+/* each rule */
+.password-rules small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0;
+  color: #e63946;
+  transition: 0.3s;
+}
+
+/* valid rule */
+.password-rules small.valid {
+  color: #2ecc71;
+}
+
+/* icons */
+.password-rules small::before {
+  content: "âœ–";
+  font-size: 12px;
+}
+
+/* change icon when valid */
+.password-rules small.valid::before {
+  content: "âœ”";
+}
+
+/* input styling */
+input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  transition: 0.3s;
+  margin-bottom: 5px;
+}
+
+/* focus effect */
+input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 5px rgba(99, 102, 241, 0.3);
+}
+
+/* invalid input */
+input.ng-invalid.ng-touched {
+  border-color: #e63946;
+}
+
+/* valid input */
+input.ng-valid.ng-touched {
+  border-color: #2ecc71;
+}
+/* Button */
+.reset-card button {
+  width: 100%;
+  padding: 12px;
+  background: #667eea;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.reset-card button:hover {
+  background: #4f5bd5;
+}
+
+/* Back to login */
+.back-login {
+  margin-top: 15px;
+}
+
+.back-login a {
+  text-decoration: none;
+  font-size: 14px;
+  color: #667eea;
+}
+
+.back-login a:hover {
+  text-decoration: underline;
+}
+
+
+================================================
+FILE: app/features/auth/pages/reset-password/reset-password.html
+================================================
+<div class="reset-container">
+    <div class="reset-card">
+
+        <h2>Reset Password</h2>
+        <p>Enter your new password below</p>
+
+        <form [formGroup]="resetForm" (ngSubmit)="resetPassword()">
+
+            <input type="password" placeholder="New Password" formControlName="password" />
+            <input type="password" placeholder="Confirm Password" formControlName="confirmPassword" />
+            <div class="password-rules">
+
+                @let password = resetForm.get('password');
+
+                <small [class.valid]="!password?.errors?.['required'] && password?.touched">
+                    Password is required
+                </small>
+
+                <small [class.valid]="!password?.errors?.['minlength'] && password?.touched">
+                    Minimum 5 characters required
+                </small>
+
+                <small [class.valid]="!password?.errors?.['specialChar'] && password?.touched">
+                    Must contain a special character
+                </small>
+
+                <small [class.valid]="!password?.errors?.['uppercase'] && password?.touched">
+                    Must contain an uppercase letter
+                </small>
+
+            </div>
+
+            <button type="submit">Reset Password</button>
+
+        </form>
+
+        <div class="back-login">
+            <a routerLink="/login">Back to Login</a>
+        </div>
+
+    </div>
+</div>
+
+
+================================================
+FILE: app/features/auth/pages/reset-password/reset-password.spec.ts
+================================================
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { ResetPassword } from './reset-password';
+
+describe('ResetPassword', () => {
+  let component: ResetPassword;
+  let fixture: ComponentFixture<ResetPassword>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ResetPassword]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(ResetPassword);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/features/auth/pages/reset-password/reset-password.ts
+================================================
+import { Component } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AuthService } from '../../../../core/service/authService/auth-service.js';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { checkPasswordValidation } from '../../validators/checkPassword.Validators.js';
+
+@Component({
+  selector: 'app-reset-password',
+  imports: [ReactiveFormsModule,RouterLink],
+  templateUrl: './reset-password.html',
+  styleUrl: './reset-password.css',
+})
+export class ResetPassword {
+  constructor(
+    private resetDetails: FormBuilder,
+    private auth: AuthService,
+    private route: ActivatedRoute
+  ) { }
+  token: string = "";
+  resetForm: any;
+
+
+  ngOnInit() {
+    // Inside group({ }) you must only define form controls, not assignments like this.token = ....
+    this.token = this.route.snapshot.params["token"];
+
+    this.resetForm = this.resetDetails.group(
+      {
+        password:  ['', [Validators.required, Validators.minLength(5), checkPasswordValidation()]],
+        confirmPassword:  ['', [Validators.required, Validators.minLength(5), checkPasswordValidation()]]
+      }
+    )
+  }
+
+  resetPassword() {
+    const value = this.resetForm.value
+    this.auth.getResetPassword(this.token, value?.password).subscribe(
+      {
+        next: (_data: any) => {
+          alert("Password reset successful")
+        },
+        error: (_data:any) => {
+          console.log(_data.error.message)
+          alert(_data.error.message);
+        }
+      }
+    )
+  }
+}
+
+
+
+================================================
+FILE: app/features/auth/validators/checkPassword.Validators.ts
+================================================
+import { AbstractControl, ValidationErrors, ValidatorFn } from "@angular/forms";
+
+export function checkPasswordValidation(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+        const password = control.value ?? '';
+        // store all validation errors
+        const errors: any = {}
+
+        if (password.length < 5) {
+            errors.minLength = true;
+        }
+        if (!/[!@#$%^&*()_+=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+            errors.specialChar = true;
+        }
+        if (!/[A-Z]/.test(password)) {
+            errors.uppercase = true;
+        }
+
+        if (!/[0-9]/.test(password)) {
+            errors.number = true;
+        }
+        // this check if any errors exist
+        return Object.keys(errors).length ? errors : null;
+    }
+}
+
+
+================================================
+FILE: app/features/auth/validators/passwordMatch.validators.ts
+================================================
+import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+
+export function passwordMatchValidator(password: string, confirmPassword: string): ValidatorFn {
+  return (formGroup: AbstractControl): ValidationErrors | null => {
+
+    const pass = formGroup.get(password);
+    const confirm = formGroup.get(confirmPassword);
+    // console.log(pass?.value)
+    // console.log(confirm?.value)
+
+    if (!pass || !confirm) return null;
+    
+    if (pass.value !== confirm.value) {
+      return { passwordMisMatch: true };
+    }
+
+    return null;
+  };
+}
+
+
+================================================
+FILE: app/features/home/home.routes.ts
+================================================
+import { Routes } from "@angular/router";
+
+export const homeRoutes: Routes = [
+    { path: 'home', pathMatch: 'full', redirectTo: 'home-success' },
+    { path: 'home-success', loadComponent: () => import('./pages/home-pages/home-pages').then((c) => c.HomePages) }
+]
+
+
+
+================================================
+FILE: app/features/home/pages/home-pages/home-pages.css
+================================================
+[Empty file]
+
+
+================================================
+FILE: app/features/home/pages/home-pages/home-pages.html
+================================================
+<span>
+    Welcome to home pages
+</span>
+
+
+================================================
+FILE: app/features/home/pages/home-pages/home-pages.spec.ts
+================================================
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { HomePages } from './home-pages';
+
+describe('HomePages', () => {
+  let component: HomePages;
+  let fixture: ComponentFixture<HomePages>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [HomePages]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(HomePages);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/features/home/pages/home-pages/home-pages.ts
+================================================
+import { Component } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+
+@Component({
+  selector: 'app-home-pages',
+  imports: [],
+  templateUrl: './home-pages.html',
+  styleUrl: './home-pages.css',
+})
+export class HomePages {
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router
+  ) { }
+
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      console.log("------1")
+      const token = params['token'];
+      console.log("Token from URL:", token);
+
+      if (token) {
+        localStorage.setItem("accessToken", token)
+
+        // remove token from URL
+        this.router.navigate([], {
+          queryParams: {},
+          replaceUrl: true
+        });
+
+        // // reload so navbar updates
+        // window.location.reload();
+        console.log("Token Saved", token);
+      }
+    })
+  }
+}
+
+
+
+================================================
+FILE: app/shared/components/navbar/navbar.css
+================================================
+[Empty file]
+
+
+================================================
+FILE: app/shared/components/navbar/navbar.html
+================================================
+<nav>
+    @if(isLoggedIn){
+    <span>
+        Welcome User
+    </span>
+    }
+</nav>
+
+
+================================================
+FILE: app/shared/components/navbar/navbar.spec.ts
+================================================
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { Navbar } from './navbar';
+
+describe('Navbar', () => {
+  let component: Navbar;
+  let fixture: ComponentFixture<Navbar>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Navbar]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(Navbar);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+
+================================================
+FILE: app/shared/components/navbar/navbar.ts
+================================================
+
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-navbar',
+  imports: [],
+  templateUrl: './navbar.html',
+  styleUrl: './navbar.css',
+})
+export class Navbar {
+  isLoggedIn = true;
+
+  ngOnInit() {
+    const token = localStorage.getItem("accessToken")
+    this.isLoggedIn == !!token;
+  }
+}
+
+

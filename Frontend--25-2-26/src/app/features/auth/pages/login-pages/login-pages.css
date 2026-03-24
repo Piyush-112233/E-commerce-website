@@ -1,0 +1,193 @@
+/* Page background */
+.body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-family: 'Segoe UI', sans-serif;
+
+  background: linear-gradient(135deg,#667eea,#764ba2, #d05045);
+  background-size: 400% 400%;
+  animation: bgMove 10s ease infinite;
+}
+
+/* Background animation */
+@keyframes bgMove{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+/* Login card */
+.form-container{
+  width:380px;
+  padding: 35px;
+
+  background: rgba(255,255,255,0.95);
+  border-radius:14px;
+
+  box-shadow:0 15px 35px rgba(0,0,0,0.25);
+
+  backdrop-filter: blur(8px);
+
+  animation: cardAppear 0.6s ease;
+}
+
+@keyframes cardAppear{
+  from{
+    opacity:0;
+    transform:translateY(20px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+/* Title */
+.form-container h2{
+  text-align:center;
+  margin-bottom:25px;
+  color:#333;
+}
+
+/* Input group */
+.input-group{
+  margin-bottom:16px;
+}
+
+.input-group label{
+  font-size:14px;
+  color:#555;
+}
+
+.input-group input{
+  width:93%;
+  padding:12px;
+  margin-top:6px;
+
+  border:1px solid #ddd;
+  border-radius:8px;
+
+  outline:none;
+  transition:0.25s;
+}
+
+/* Input focus effect */
+.input-group input:focus{
+  border-color:#667eea;
+  box-shadow:0 0 6px rgba(102,126,234,0.4);
+}
+
+/* forgot css */
+.forgot-password {
+  text-align: right;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.forgot-password a {
+  font-size: 15px;
+  color: #007bff;
+  text-decoration: none;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+
+/* Login button */
+.login-btn{
+  width:100%;
+  padding:12px;
+
+  border:none;
+  border-radius:8px;
+
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  color:white;
+
+  font-size:15px;
+  font-weight:600;
+
+  cursor:pointer;
+
+  transition:0.3s;
+}
+
+.login-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 18px rgba(0,0,0,0.25);
+}
+
+/* Divider */
+.divider{
+  display:flex;
+  align-items:center;
+  margin:22px 0;
+}
+
+.divider::before,
+.divider::after{
+  content:"";
+  flex:1;
+  border-bottom:1px solid #ddd;
+}
+
+.divider span{
+  margin:0 10px;
+  font-size:13px;
+  color:#777;
+}
+
+/* Google Button */
+.googleButton{
+  width:100%;
+  padding:13px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+
+  border:none;
+  border-radius:10px;
+
+  font-size:15px;
+  font-weight:600;
+  color:white;
+
+  background: linear-gradient(270deg,#4285F4,#EA4335,#FBBC05,#34A853);
+  background-size:600% 600%;
+
+  cursor:pointer;
+
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  animation: gradientMove 6s ease infinite;
+}
+
+.googleButton img{
+  width:20px;
+  height:20px;
+
+  background:white;
+  border-radius:50%;
+  padding:3px;
+}
+
+.googleButton:hover{
+  transform:translateY(-3px);
+  box-shadow:0 8px 20px rgba(0,0,0,0.25);
+}
+
+.googleButton:active{
+  transform:scale(0.96);
+}
+
+/* Gradient animation */
+@keyframes gradientMove{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}

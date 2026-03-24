@@ -1,0 +1,47 @@
+<div class="body">
+    <div class="form-container">
+        <h2>Login</h2>
+
+        <form [formGroup]="loginForm" (ngSubmit)="login()" novalidate>
+
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" placeholder="Enter your email" required formControlName="email">
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" placeholder="Enter password" formControlName="password">
+
+                @let password = loginForm.get('password');
+                @if(password?.touched && password?.errors?.['required']){
+                <small>* Password is required</small>
+                }
+
+                @if(password?.touched && (password?.errors?.['minlength'] || password?.errors?.['minLength'])){
+                <small>* Minimum 5 characters required</small>
+                }
+
+                @if(password?.touched && password?.errors?.['specialChar']){
+                <small>* Password must contain a special character</small>
+                }
+                @if(password?.touched && password?.errors?.['uppercase']){
+                <small>* Password must contain a Uppercase Letter</small>
+                }
+            </div>
+            <div class="forgot-password">
+                <a routerLink="/auth/forgot-password">Forgot Password ?</a>
+            </div>
+
+            <button type="submit" class="login-btn">Login</button>
+
+            <div class="divider">
+                <span>OR</span>
+            </div>
+
+            <button type="button" class="googleButton" (click)="loginWithGoogle()"><img
+                    src="https://developers.google.com/identity/images/g-logo.png" alt="Google">Login With Google
+            </button>
+        </form>
+    </div>
+</div>

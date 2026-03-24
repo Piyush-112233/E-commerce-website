@@ -1,0 +1,65 @@
+<div class="body">
+    <div class="form-container">
+        <h2>Register</h2>
+
+        <form [formGroup]="registerForm"  (ngSubmit)="register()" novalidate>
+            <div class="input-group">
+                <label>Name</label>
+                <input type="text" placeholder="Enter your name" required formControlName="name">
+            </div>
+
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" placeholder="Enter your email" required formControlName="email">
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" placeholder="Enter password" formControlName="password">
+
+                @let password = registerForm.get('password');
+                @if(password?.touched && password?.errors?.['required']){
+                <small>* Password is required</small>
+                }
+
+                @if(password?.touched && (password?.errors?.['minlength'] || password?.errors?.['minLength'])){
+                <small>* Minimum 5 characters required</small>
+                }
+
+                @if(password?.touched && password?.errors?.['specialChar']){
+                <small>* Password must contain a special character</small>
+                }
+                @if(password?.touched && password?.errors?.['uppercase']){
+                <small>* Password must contain a Uppercase Letter</small>
+                }
+            </div>
+
+            <div class="input-group">
+                <label>Confirm Password</label>
+
+                <input type="password" placeholder="Enter Confirm Password" formControlName="confirmPassword">
+
+                @let confirmPassword = registerForm.get('confirmPassword');
+
+                @if(confirmPassword?.touched && confirmPassword?.errors?.['required']){
+                <small>* Password is required</small>
+                }
+
+                @if(confirmPassword?.touched && registerForm.errors?.['passwordMisMatch']){
+                <small>Passwords do not match</small>
+                }
+            </div>
+
+            <div class="input-group">
+                <label>Role</label>
+                <select formControlName="role">
+                    <option value="">Select Role</option>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
+            <button type="submit">Register</button>
+        </form>
+    </div>
+</div>
