@@ -10,7 +10,10 @@ const authorizeRoles = (...roles) => {
             return res.status(500).json(new ApiError(500, "Server misconfiguration: roles not provided"));
         }
 
-        if (!roles.includes(req.user.role)) {
+        const requiredRoles = roles.map((role) => String(role).toLowerCase());
+        const userRole = String(req.user.role || (req.user.isAdmin ? "admin" : "user")).toLowerCase();
+
+        if (!requiredRoles.includes(userRole)) {
             return res.status(403).json(
                 new ApiError(403,
                     {

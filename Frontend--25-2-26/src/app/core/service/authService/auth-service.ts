@@ -1,14 +1,22 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { jwtDecode } from 'jwt-decode';
-import { catchError, Observable, of, ReplaySubject, tap } from 'rxjs';
+import { catchError, map, Observable, of, ReplaySubject, tap } from 'rxjs';
 
-export type Role = 'admin' | 'user';
+export type Role = 'admin' | 'user' | 'customer';
 
 export interface MeResponse {
   id: string,
+  name?: string,
   email: string,
   role: Role
+}
+
+interface ApiResponse<T> {
+  statusCode: number;
+  data: T;
+  message?: string;
+  success?: boolean;
 }
 
 
@@ -86,8 +94,9 @@ export class AuthService {
     if (this.loaded) return this.$me;
 
     this.loaded = true;
-    const url = this.http.get<MeResponse>('http://localhost:3000/api/users/me', { withCredentials: true })
+    const url = this.http.get<MeResponse | ApiResponse<MeResponse>>('http://localhost:3000/api/users/me', { withCredentials: true })
     return url.pipe(
+      map((res) => ('data' in (res as ApiResponse<MeResponse>) ? (res as ApiResponse<MeResponse>).data : (res as MeResponse))),
       tap(me => this.meSubject.next(me)),
       catchError(() => {
         this.meSubject.next(null);
@@ -99,8 +108,9 @@ export class AuthService {
   // Use after login/logout to refresh state
   refreshMe(): Observable<MeResponse | null> {
     this.loaded = true;
-    const url = this.http.get<MeResponse>('http://localhost:3000/api/users/me', { withCredentials: true });
+    const url = this.http.get<MeResponse | ApiResponse<MeResponse>>('http://localhost:3000/api/users/me', { withCredentials: true });
     return url.pipe(
+      map((res) => ('data' in (res as ApiResponse<MeResponse>) ? (res as ApiResponse<MeResponse>).data : (res as MeResponse))),
       tap(me => this.meSubject.next(me)),
       catchError(() => {
         this.meSubject.next(null);

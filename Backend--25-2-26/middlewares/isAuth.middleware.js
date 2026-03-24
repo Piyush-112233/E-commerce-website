@@ -12,20 +12,20 @@ const isAuthVerifyJwt = async (req, _, next) => {
     const token = cookieToken || tokenFromHeader;
     
     if (!token) {
-      return new ApiError(401, "Unauthorized, doesn't have token");
+      return _.status(401).json(new ApiError(401, "Unauthorized, token missing"));
     }
 
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
     const user = await UserModel.findById(decodedToken?._id).select("-password -refreshToken")
 
     if (!user) {
-      new ApiError(400, "Invalid Access Token")
+      return _.status(401).json(new ApiError(401, "Invalid access token"));
     }
 
     req.user = user;
     next();
   } catch (error) {
-    new ApiError(400, error?.message || "Invalid Access Token")
+    return _.status(401).json(new ApiError(401, error?.message || "Invalid access token"));
   }
 }
 

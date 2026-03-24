@@ -2,16 +2,16 @@ import express from "express";
 import { categoryController, categoryDelete, categoryGetAll, categoryUpdate, productAdd, productUpdate, productDelete, productGetAll, productGetById, bulkCreateProducts } from "../controllers/admin.controller.js";
 import upload from "../middlewares/multer.js";
 import { getUsers } from "../controllers/user.controller.js";
-// import isAuthVerifyJwt from "../middlewares/isAuth.middleware.js";
-// import authorizeRoles from "../middlewares/role.middleware.js";
+import isAuthVerifyJwt from "../middlewares/isAuth.middleware.js";
+import authorizeRoles from "../middlewares/role.middleware.js";
 
 
 const adminRouter = express.Router();
 
 // Category Router
-adminRouter.post("/category", categoryController);
-adminRouter.put("/category/:id", categoryUpdate);
-adminRouter.delete("/category/:id", categoryDelete);
+adminRouter.post("/category", isAuthVerifyJwt, authorizeRoles("admin"), categoryController);
+adminRouter.put("/category/:id", isAuthVerifyJwt, authorizeRoles("admin"), categoryUpdate);
+adminRouter.delete("/category/:id", isAuthVerifyJwt, authorizeRoles("admin"), categoryDelete);
 adminRouter.get("/category/getAll", categoryGetAll);
 
 
@@ -19,18 +19,18 @@ adminRouter.get("/category/getAll", categoryGetAll);
 // Product Router
 adminRouter.post("/product",
     upload.fields([{ name: "images", maxCount: 1 }]),
-        // isAuthVerifyJwt,       // check login
-    // authorizeRoles("admin"),   // check role
+    isAuthVerifyJwt,
+    authorizeRoles("admin"),
     productAdd
 );
 adminRouter.put('/product/:id',
-    // isAuthVerifyJwt,
-    // authorizeRoles("admin"),
+    isAuthVerifyJwt,
+    authorizeRoles("admin"),
     productUpdate
 );
 adminRouter.delete('/product/:id',
-    // isAuthVerifyJwt,
-    // authorizeRoles("admin"),
+    isAuthVerifyJwt,
+    authorizeRoles("admin"),
     productDelete
 );
 
@@ -43,11 +43,13 @@ adminRouter.get('/product/getById',
 );
 
 adminRouter.post('/products/bulk',
+    isAuthVerifyJwt,
+    authorizeRoles("admin"),
     bulkCreateProducts
 );
 
 
-adminRouter.get('allUsers', getUsers);
+adminRouter.get('/allUsers', isAuthVerifyJwt, authorizeRoles("admin"), getUsers);
 
 export default adminRouter;
 

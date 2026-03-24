@@ -12,10 +12,10 @@ userRouter.post('/reset-password/:token', resetPassword);
 //secured routes
 userRouter.post('/logout', isAuthVerifyJwt, logoutUser);
 userRouter.post('/refresh-token', RefreshAccessToken);
-userRouter.patch('/changePassword', changeCurrentPassword);
-userRouter.patch('/updateDetails', updateAccountDetails);
+userRouter.patch('/changePassword', isAuthVerifyJwt, changeCurrentPassword);
+userRouter.patch('/updateDetails', isAuthVerifyJwt, updateAccountDetails);
 
 userRouter.get('/profile', isAuthVerifyJwt, getUserProfile);
 
-userRouter.get('/me', auth)
+userRouter.get('/me', isAuthVerifyJwt, auth)
 export default userRouter;

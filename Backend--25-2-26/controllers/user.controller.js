@@ -516,12 +516,14 @@ const auth = async (req, res) => {
                     id: user.id.toString(),
                     name: user.name,
                     email: user.email,
-                    role: user.role
+                    role: user.role || (user.isAdmin ? "admin" : "user")
                 }
             )
         )
     } catch (error) {
-
+        return res.status(500).json(
+            new ApiError(500, error?.message || "Failed to fetch current user")
+        );
     }
 }
 

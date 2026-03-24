@@ -1,11 +1,8 @@
 import { Routes } from '@angular/router';
-import { authGuardGuard } from './core/guards/authGuard/auth-guard-guard';
 import { roleGuard } from './core/guards/role/role-guard';
+import { userAreaGuard } from './core/guards/user-area/user-area-guard';
 
 export const routes: Routes = [
-  { path: 'login', pathMatch: 'full', redirectTo: 'auth/login' },
-
-  // ✅ auth pages must be reachable without login
   {
     path: 'auth',
     loadChildren: () =>
@@ -13,11 +10,17 @@ export const routes: Routes = [
   },
 
   {
-  path: 'admin',
-  canMatch: [roleGuard],
-  data: { roles: ['admin'] },
-  loadChildren: () => import('./features/admin/admin.routes').then(m => m.adminRoutes)
-}
+    path: 'admin',
+    canMatch: [roleGuard],
+    data: { roles: ['admin'] },
+    loadChildren: () => import('./features/admin/admin.routes').then((m) => m.adminRoutes),
+  },
 
-  { path: '', loadChildren: () => import('./features/home/home.routes').then((m) => m.homeRoutes) },
+  {
+    path: '',
+    canMatch: [userAreaGuard],
+    loadChildren: () => import('./features/home/home.routes').then((m) => m.homeRoutes),
+  },
+
+  { path: '**', redirectTo: '' },
 ];

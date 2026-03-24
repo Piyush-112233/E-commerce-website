@@ -12,8 +12,10 @@ export const guestGuard: CanActivateFn = (route, state) => {
     map(me => {
       if(!me) return true;
 
-      // redirect based on role
-      return me.role === 'ADMIN' ? router.createUrlTree(['/admin']) : router.createUrlTree(['/home-success']);
+      // Admin -> /admin only; user/customer -> root (home routes handle / -> home-success)
+      return me.role === 'admin'
+        ? router.createUrlTree(['/admin'])
+        : router.createUrlTree(['/']);
       
     })
   );

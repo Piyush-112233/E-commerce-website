@@ -39,7 +39,7 @@ export class ResetPassword {
       {
         next: (_data: any) => {
           alert("Password reset successful")
-          this.router.navigate(['/home-success'])
+          this.router.navigate(['/'])
         },
         error: (_data:any) => {
           console.log(_data.error.message)

@@ -1,5 +1,5 @@
-import { inject, Input } from '@angular/core';
-import { ActivatedRouteSnapshot, CanMatchFn, Route, Router, UrlSegment, UrlTree } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanMatchFn, Route, Router, UrlSegment, UrlTree } from '@angular/router';
 import { AuthService, Role } from '../../service/authService/auth-service';
 import { map, Observable } from 'rxjs';
 
@@ -7,15 +7,26 @@ export const roleGuard: CanMatchFn = (route: Route, segments: UrlSegment[]): Obs
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  const allowed = route.data?.['roles'] as string[];
+  const allowedRoles = (route.data?.['roles'] ?? []) as Role[];
 
   return auth.loadMe().pipe(
-    map(me => {
-      if(!me) return router.createUrlTree(['/auth/login']);
-      if(allowed.length === 0) return true;
+    map((user) => {
+      if (!user) {
+        return router.createUrlTree(['/auth/login']);
+      }
 
-      const ok = allowed.includes(me.role);
-      return ok ? true : router.createUrlTree(['/forbidden'])
-    })
-  )
+      if (allowedRoles.length === 0) {
+        return true;
+      }
+
+      if (allowedRoles.includes(user.role)) {
+        return true;
+      }
+
+      // Redirect based on role when current route is not allowed.
+      if (user.role === 'admin') return router.createUrlTree(['/admin']);
+      if (user.role === 'user' || user.role === 'customer') return router.createUrlTree(['/']);
+      return router.createUrlTree(['/auth/login']);
+    }),
+  );
 };
