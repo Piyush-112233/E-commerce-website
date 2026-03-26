@@ -4,27 +4,46 @@ const message = new mongoose.Schema({
     conversationId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "conversation",
-        required: true
+        required: true,
+        index: true
     },
     senderId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user',
-        required: true
+        required: true,
+        index: true
     },
     senderRole: {
         type: String,
-        enum: ['customer' | 'admin' | 'system'],
-        required: true
+        enum: ['customer', 'admin'],
+        required: true,
+        index: true
     },
-    type:{
+    attachments: [
+        {
+            url: String,
+            type: String,
+            name: String,
+            size: Number
+        }
+    ],
+    readBy: [
+        {
+            userId: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
+            readAt: { type: Date, default: Date.now }
+        }
+    ],
+    type: {
         type: String,
-        enum: ['text'| 'image' | 'file' | 'system'],
+        enum: ['text'],
         default: 'text'
     },
+    text: {
+        type: String,
+        default: ''
+    },
 
-    text: 'string',
-
-}, {timestamps: true})
+}, { timestamps: true })
 
 //Indexes 
 message.index(

@@ -24,7 +24,8 @@ export const roleGuard: CanMatchFn = (route: Route, segments: UrlSegment[]): Obs
       }
 
       // Redirect based on role when current route is not allowed.
-      if (user.role === 'admin') return router.createUrlTree(['/admin']);
+      if (user.role === 'admin') return true
+      else router.createUrlTree(['/admin']);
       if (user.role === 'user' || user.role === 'customer') return router.createUrlTree(['/']);
       return router.createUrlTree(['/auth/login']);
     }),

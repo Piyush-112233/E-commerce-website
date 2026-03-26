@@ -1,0 +1,90 @@
+.admin-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 12px;
+    height: 90vh;
+    padding: 12px;
+}
+
+.left-panel,
+.right-panel {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.conv-item {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 8px;
+    margin: 8px 0;
+    cursor: pointer;
+}
+
+.conv-item.active {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.messages {
+    height: calc(90vh - 180px);
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px 0;
+    background: #fafafa;
+}
+
+.msg {
+    max-width: 75%;
+    padding: 8px;
+    border-radius: 8px;
+    margin: 8px 0;
+}
+
+.msg.customer {
+    background: #e5e7eb;
+    margin-right: auto;
+}
+
+.msg.admin {
+    background: #dbeafe;
+    margin-left: auto;
+}
+
+.meta {
+    font-size: 12px;
+    opacity: .8;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.input-row input {
+    flex: 1;
+    padding: 10px;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}

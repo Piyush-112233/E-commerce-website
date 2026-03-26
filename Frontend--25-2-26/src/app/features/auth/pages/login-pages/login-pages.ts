@@ -38,14 +38,12 @@ export class LoginPages {
 
     const value = this.loginForm.value;
     this.auth.getLoginDetails(value?.email, value?.password).subscribe({
-      next: () => {
+      next: (res: any) => {
         alert("Login Successfully");
-        // const token = _data?.token || _data?.accessToken || _data?.data?.token;
+        // Store accessToken for Socket.IO fallback auth (backend also uses cookies).
+        const token = res?.data?.accessToken ?? res?.accessToken;
+        if (token) localStorage.setItem('accessToken', token);
 
-        // if(token) {
-        //   localStorage.setItem('accessToken', _data.token);
-        // }
-        // console.log(token)
         this.auth.refreshMe().subscribe({
           next: (me) => {
             if (me?.role === 'admin') this.router.navigateByUrl('/admin');

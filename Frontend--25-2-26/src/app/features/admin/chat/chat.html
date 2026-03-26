@@ -1,0 +1,57 @@
+<div class="admin-layout">
+  <!-- Left panel -->
+  <aside class="left-panel">
+    <h3>Conversations</h3>
+
+    <div class="filter-row">
+      <select [(ngModel)]="statusFilter" (change)="loadConversations()">
+        <option value="open">open</option>
+        <option value="assigned">assigned</option>
+        <option value="pending">pending</option>
+        <option value="closed">closed</option>
+      </select>
+      <button (click)="loadConversations()">Refresh</button>
+    </div>
+
+    <div class="conv-item" *ngFor="let conv of conversations; trackBy: trackByConv" (click)="selectConversation(conv)"
+      [class.active]="selectedConversation?._id === conv._id">
+      <div><b>{{ conv._id }}</b></div>
+      <div>Status: {{ conv.status }}</div>
+      <small>{{ conv.lastMessageText || 'No messages yet' }}</small>
+    </div>
+  </aside>
+
+  <!-- Right panel -->
+  <section class="right-panel" *ngIf="selectedConversation; else emptyState">
+    <div class="top-bar">
+      <div>
+        <div><b>Conversation:</b> {{ selectedConversation._id }}</div>
+        <div><b>Status:</b> {{ selectedConversation.status }}</div>
+      </div>
+      <div class="actions">
+        <button (click)="assignSelected()">Assign to me</button>
+        <button (click)="closeSelected()">Close</button>
+      </div>
+    </div>
+
+    <div id="admin-chat-scroll" class="messages">
+      <div class="msg" *ngFor="let msg of messages; trackBy: trackByMsg"
+        [class.customer]="msg.senderRole === 'customer'" [class.admin]="msg.senderRole === 'admin'">
+        <div class="meta">
+          <span>{{ msg.senderRole }}</span>
+          <small>{{ msg.createdAt | date:'short' }}</small>
+        </div>
+        <div>{{ msg.text }}</div>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <input type="text" [(ngModel)]="messageText" (keyup.enter)="sendMessage()" placeholder="Type reply..." />
+      <button (click)="sendMessage()">Send</button>
+    </div>
+  </section>
+
+  <ng-template #emptyState>
+    <section class="right-panel empty">Select a conversation</section>
+  </ng-template>
+</div>

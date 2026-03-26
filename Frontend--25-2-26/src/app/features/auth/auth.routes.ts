@@ -6,7 +6,7 @@ export const authRoutes: Routes = [
     // {path: "", loadComponent: () => import('./pages/login-pages/login-pages').then((c) => c.LoginPages)},
     {
         path: "login",
-        canActivate: [guestGuard],
+        // canActivate: [guestGuard],
         loadComponent: () => import('./pages/login-pages/login-pages').then((c) => c.LoginPages)
     },
     { path: "forgot-password", canActivate: [guestGuard], loadComponent: () => import('./pages/forgot-password/forgot-password').then((c) => c.ForgotPassword) },

@@ -2,6 +2,7 @@ import "./config/env.js";
 import express from 'express';
 import connectDb from './config/db.js';
 import cors from 'cors'
+import http from 'http';
 
 const app = express();
 const PORT = process.env.PORT || 6000;
@@ -28,6 +29,7 @@ import passport from "passport";
 import './bullMq/worker.js/email.worker.js'
 import adminRouter from "./routes/admin.router.js";
 import chatRouter from "./routes/chatRouter.js";
+import { setupSocketIO } from "./socket.io/server.js";
 
 
 //route declaration
@@ -39,7 +41,11 @@ app.use('/auth', googleRouter);
 app.use(passport.initialize());
 app.use('/api',chatRouter)
 
-app.listen(PORT, () => {
+// Create a single HTTP server for both Express and Socket.IO
+const server = http.createServer(app);
+setupSocketIO(server);
+
+server.listen(PORT, () => {
     try {
         connectDb();
         console.log(`server is running on port ${PORT}`)

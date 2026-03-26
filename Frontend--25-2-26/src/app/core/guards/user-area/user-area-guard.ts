@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanMatchFn, Router, UrlTree } from '@angular/router';
 import { AuthService } from '../../service/authService/auth-service';
-import { map, Observable } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 
 /**
  * Admin users must stay under `/admin` only. User/customer (and guests on public home) use `/`.
@@ -17,5 +17,7 @@ export const userAreaGuard: CanMatchFn = (): Observable<boolean | UrlTree> => {
       }
       return true;
     }),
+    // if unauthenticated/error, allow public/user area
+    catchError(() => of(true))
   );
 };

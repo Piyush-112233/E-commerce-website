@@ -9,9 +9,15 @@ export function canCustomerAccessConversation(conv, userId) {
 }
 
 export function canAdminAccessConversation(conv, user) {
-    if (user.role === "admin") {
-        return true
+    const role = String(user.role || (user.isAdmin ? "admin" : "user")).toLowerCase();
+    if (role === "admin") {
+        return true;
+    }
+    
+    // Also allow if the user is assigned as the agent for this conversation
+    if (conv.adminId && String(conv.adminId) === String(user._id)) {
+        return true;
     }
 
-    return false
+    return false;
 }

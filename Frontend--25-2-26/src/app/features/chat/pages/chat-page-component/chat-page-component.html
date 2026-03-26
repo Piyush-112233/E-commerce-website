@@ -1,0 +1,28 @@
+<div class="chat-wrapper">
+  <h2>Support Chat</h2>
+
+  <div id="chat-scroll-container" class="chat-messages">
+    <div
+      *ngFor="let msg of messages; trackBy: trackByMsgId"
+      class="msg"
+      [class.customer]="msg.senderRole === 'customer'"
+      [class.admin]="msg.senderRole === 'admin'"
+    >
+      <div class="meta">
+        <span>{{ msg.senderRole }}</span>
+        <small>{{ msg.createdAt | date:'short' }}</small>
+      </div>
+      <div class="text">{{ msg.text }}</div>
+    </div>
+  </div>
+
+  <div class="chat-input">
+    <input
+      type="text"
+      [(ngModel)]="messageText"
+      (keyup.enter)="sendMessage()"
+      placeholder="Type message..."
+    />
+    <button (click)="sendMessage()">Send</button>
+  </div>
+</div>

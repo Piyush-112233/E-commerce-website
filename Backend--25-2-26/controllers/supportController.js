@@ -13,14 +13,16 @@ export const conversation = async (req, res) => {
     try {
         const user = req.user;
 
-        if (user.role !== "customer") {
-            return res.status(403).json({ message: "Only customers can create conversations" });
+        // "customer" side can be both customer + user roles in DB terms.
+        // (Socket senderRole is derived from conversation.customerId, not the JWT role string.)
+        if (user.role === "admin") {
+            return res.status(403).json({ message: "Admins cannot create new customer conversations" });
         }
 
         // One-open-conversation-per-customer approach:
         let conv = await ConversationModel.findOne({
             customerId: user._id,
-            status: { $in: ['open' | 'assigned' | 'pending'] }
+            status: { $in: ['open', 'assigned', 'pending'] }
         });
 
         if (!conv) {
@@ -31,15 +33,14 @@ export const conversation = async (req, res) => {
             })
         }
 
-        res.status(200).json(
-            new ApiResponse(200, { conv })
-        )
+        return res.status(200).json(new ApiResponse(200, { conv }));
+
     } catch (error) {
         return res.status(500).json(
             new ApiError(500,
                 {
                     message: "Server error",
-                    error: String(err.message || err)
+                    error: String(error.message || error)
                 }
             )
         );
@@ -56,41 +57,33 @@ export const conversationById = async (req, res) => {
         const { id } = req.params;
 
         if (!isValidObjectid(id)) {
-            return res.status(400).json(400,
-                {
-                    message: "Invalid conversation Id"
-                }
-            )
+            return res.status(400).json(new ApiError(400, { message: "Invalid conversation Id" }));
         };
 
         const conv = await ConversationModel.findById(id);
 
         if (!conv) {
-            return new ApiError(400, {
-                message: "Conversation not found"
-            });
+            return res.status(404).json(new ApiError(404, { message: "Conversation not found" }));
         }
 
         const user = req.user
-        const allowed = (user.role === "customer" && canCustomerAccessConversation(conv, user._id) || user.role !== "customer" && canAdminAccessConversation(conv, user));
+        const allowed = canCustomerAccessConversation(conv, user._id) || canAdminAccessConversation(conv, user);
 
         if (!allowed) {
-            return new ApiError(403,
-                {
+            return res.status(403).json(
+                new ApiError(403, {
                     message: "Forbidden"
-                }
+                })
             )
         }
 
-        return res.status(200).json(
-            new ApiResponse(200, { conv })
-        )
+        return res.status(200).json(new ApiResponse(200, { conv }));
     } catch (error) {
         return res.status(500).json(
             new ApiError(500,
                 {
                     message: "Server error",
-                    error: String(err.message || err)
+                    error: String(error.message || error)
                 }
             )
         );
@@ -102,33 +95,32 @@ export const conversationById = async (req, res) => {
  * CUSTOMER/AGENT/ADMIN: Get messages for a conversation (pagination)
  * GET /api/conversations/:id/messages?limit=30&before=ISO_DATE
  */
-export const MessageforConversation = async (req, rea) => {
+export const MessageforConversation = async (req, res) => {
     try {
         const { id } = req.params;
 
         if (!isValidObjectid(id)) {
-            return new ApiError(403),
-            {
-                message: "Invalid Conversation Id"
-            }
+            return res.status(400).json(
+                new ApiError(400,
+                    { message: "Invalid Conversation Id" }
+                )
+            );
         }
 
         const conv = await ConversationModel.findById(id);
 
         if (!conv) {
-            return new ApiError(400, {
-                message: "Conversation not found"
-            });
+            return res.status(404).json(new ApiError(404, { message: "Conversation not found" }));
         }
 
         const user = req.user
-        const allowed = (user.role === "customer" && canCustomerAccessConversation(conv, user._id) || user.role !== "customer" && canAdminAccessConversation(conv, user));
+        const allowed = canCustomerAccessConversation(conv, user._id) || canAdminAccessConversation(conv, user);
 
         if (!allowed) {
-            return new ApiError(403,
-                {
+            return res.status(403).json(
+                new ApiError(403, {
                     message: "Forbidden"
-                }
+                })
             )
         }
 
@@ -141,15 +133,17 @@ export const MessageforConversation = async (req, rea) => {
             createdAt: { $lt: before }
         }).sort({ createdAt: -1 }).limit(limit)
 
-        return new ApiResponse(200, {
-            message: messages.reverse()
-        })
+        return res.status(200).json(
+            new ApiResponse(200, {
+                messages: messages.reverse()
+            })
+        )
     } catch (error) {
         return res.status(500).json(
             new ApiError(500,
                 {
                     message: "Server error",
-                    error: String(err.message || err)
+                    error: String(error.message || error)
                 }
             )
         );
@@ -171,21 +165,20 @@ export const convStatusLimit = async (req, res) => {
         if (status) query.status = status;
 
         // If agent (not admin), show only assigned to them (recommended)
-        if (req.user.role === "admin") {
+        const userRole = String(req.user.role || (req.user.isAdmin ? "admin" : "user")).toLowerCase();
+        if (userRole !== "admin") {
             query.adminId = req.user._id
         }
 
         const conversation = await ConversationModel.find(query).sort({ lastMessageAt: -1 }).limit(limit);
 
-        return new ApiResponse(200, {
-            conversation
-        })
+        return res.status(200).json(new ApiResponse(200, { conversation }));
     } catch (error) {
         return res.status(500).json(
             new ApiError(500,
                 {
                     message: "Server error",
-                    error: String(err.message || err)
+                    error: String(error.message || error)
                 }
             )
         );
@@ -201,18 +194,23 @@ export const assign = async (req, res) => {
         const { id } = req.params;
 
         if (!isValidObjectid(id)) {
-            return new ApiError(403),
-            {
-                message: "Invalid Conversation Id"
-            }
+            return res.status(400).json(
+                new ApiError(400,
+                    { message: "Invalid conversation Id" }
+                )
+            );
         }
 
         const conv = await ConversationModel.findById(id);
 
-        if (!conv) return new ApiError(400, { message: "Conversation not found" });
+        if (!conv) return res.status(404).json(new ApiError(404, { message: "Conversation not found" }));
 
         if (conv.status === "closed") {
-            return res.status(400).json({ message: "Conversation is Closed" });
+            return res.status(400).json(
+                new ApiError(400,
+                    { message: "Conversation is Closed" }
+                )
+            );
         }
 
         if (conv.adminId && String(conv.adminId) !== String(req.user._id) && req.user.role !== "admin") {
@@ -225,13 +223,13 @@ export const assign = async (req, res) => {
         conv.status = "assigned";
         await conv.save();
 
-        return new ApiResponse(200, { conv })
+        return res.status(200).json(new ApiResponse(200, { conv }));
     } catch (error) {
         res.status(500).json(
             new ApiError(500,
                 {
                     message: "Server error",
-                    error: String(err.message || err)
+                    error: String(error.message || error)
                 }
             )
         )
@@ -248,24 +246,20 @@ export const closeConversation = async (req, res) => {
         const { id } = req.params;
 
         if (!isValidObjectid(id)) {
-            return new ApiError(403,
-                {
-                    message: "Invalid Conversation Id"
-                }
-            )
+            return res.status(400).json(
+                new ApiError(400,
+                    { message: "Invalid conversation Id" }
+                )
+            );
         }
 
         const conv = await ConversationModel.findById(id);
 
-        if (!conv) return new ApiError(400, { message: "Conversation not found" });
+        if (!conv) return res.status(404).json(new ApiError(404, { message: "Conversation not found" }));
 
         if (req.user.role === "admin") {
-            if (!conv.adminId && String(conv.adminId) !== String(req.user._id)) {
-                return new ApiError(409,
-                    {
-                        message: "Only Assigned Amin can closed it"
-                    }
-                )
+            if (!conv.adminId || String(conv.adminId) !== String(req.user._id)) {
+                return res.status(403).json(new ApiError(403, { message: "Only assigned admin can close it" }));
             }
         }
 
@@ -273,13 +267,13 @@ export const closeConversation = async (req, res) => {
         conv.closedAt = new Date();
         await conv.save();
 
-        return new ApiResponse(200, { conv });
+        return res.status(200).json(new ApiResponse(200, { conv }));
     } catch (error) {
         res.status(500).json(
             new ApiError(500,
                 {
                     message: "Server error",
-                    error: String(err.message || err)
+                    error: String(error.message || error)
                 }
             )
         )

@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:dev": "ng build --configuration development",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -33,6 +34,7 @@
     "@angular/router": "^21.1.0",
     "jwt-decode": "^4.0.0",
     "rxjs": "~7.8.0",
+    "socket.io-client": "^4.8.3",
     "tslib": "^2.3.0",
     "xlsx": "^0.18.5",
     "zone.js": "^0.16.1"

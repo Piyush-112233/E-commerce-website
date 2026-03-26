@@ -124,11 +124,5 @@ export class AuthService {
     this.loaded = true;
     this.meSubject.next(null);
   }
-
-
-
-  // meRefresh(formValue: any) {
-  //   return this.http.post('http://localhost:4200/auth/login', { formValue }, { withCredentials: true });
-  // }
 }
 

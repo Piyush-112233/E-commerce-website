@@ -1,52 +1,65 @@
 import mongoose from "mongoose";
 
-const conversation = new mongoose.Schema({
-    customerId : {
+const participantSchema = new mongoose.Schema({
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user',
         required: true
     },
+    role: {
+        type: String,
+        enum: ['customer', 'admin'],
+        required: true
+    },
+    joinedAt: {
+        type: Date,
+        // default: date.now
+    }
+});
+
+const conversation = new mongoose.Schema({
+    customerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+        required: true,
+        index: true
+    },
     adminId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user'
+        ref: 'user',
+        default: null,
+        index: true
+    },
+    participants: {
+        type: [participantSchema],
+        default: []
     },
     status: {
         type: String,
-        enum: ['open' | 'assigned' | 'pending' | 'closed'],
-        default: "open"
+        enum: ['open', 'assigned', 'pending', 'closed'],
+        default: "open",
+        index: true
     },
-    lastMessageAt:{
+    lastMessageAt: {
         type: Date,
-        default: Date.now
+        default: Date.now,
+        index: true
     },
-    lastMessageText: String,
-
-    closedAt: Date
-
-}, {timestamps: true});
-
-// Indexs
-conversation.index(
-    {
-        customerId: 1,
-        status: 1,
-        lastMessageAt: -1
+    lastMessageText: {
+        type: String,
+        default: ''
+    },
+    unreadCountCustomer: {
+        type: Number,
+        default: 0
+    },
+    unreadCountAdmin: {
+        type: Number,
+        default: 0
     }
-);
-conversation.index(
-    {
-        adminId: 1,
-        status: 1,
-        lastMessageAt: -1
-    }
-);
-conversation.index(
-    {
-        status: 1,
-        lastMessageAt: -1
-    }
-);
 
-const ConversationModel = mongoose.model('conversation',conversation);
+}, { timestamps: true });
+
+const ConversationModel = mongoose.model('conversation', conversation);
 
 export default ConversationModel;
