@@ -3,6 +3,8 @@ import ConversationModel from "../model/supportConversation.js";
 import MessageModel from "../model/SupportMessage.js";
 import cookie from "cookie";
 import verifySocketJwt from "../middlewares/verifySocketJwt.js";
+import { v2 as cloudinary } from "cloudinary";
+import "../config/cloudinary.js";
 
 
 
@@ -16,6 +18,7 @@ export const setupSocketIO = (server) => {
             credentials: true,
         },
         path: '/socket.io',
+        maxHttpBufferSize: 1e7, // 10MB limit
     });
 
     // Socket auth (JWT via handshake.auth.token OR cookie accessToken)
@@ -65,12 +68,12 @@ export const setupSocketIO = (server) => {
             socket.join(conversationRoom(conversationId));
         });
 
-        socket.on("chat:send", async ({ conversationId, text }, ack) => {
+        socket.on("chat:send", async ({ conversationId, text, file }, ack) => {
             try {
-                if (!text || !text.trim()) return ack?.({ ok: false, error: 'Empty message' });
+                if ((!text || !text.trim()) && (!file || file.length === 0)) return ack?.({ ok: false, error: 'Empty message' });
 
                 const conv = await ConversationModel.findById(conversationId);
-                if (!conv) return;
+                if (!conv) return ack?.({ ok: false, error: 'Conversation not found' });
 
                 // Send authorization same logic
                 const isCustomer = String(conv.customerId) === userId;
@@ -78,17 +81,39 @@ export const setupSocketIO = (server) => {
                 const isAssignedAdmin = conv.adminId && String(conv.adminId) === userId;
 
                 const allowed = isCustomer || isAdmin || isAssignedAdmin;
-                if (!allowed) return;
+                if (!allowed) return ack?.({ ok: false, error: 'Unauthorized to send messages in this conversation' });
+
+                let uploadedAttachments = [];
+                if (file && Array.isArray(file) && file.length > 0) {
+                    for (const f of file) {
+                        if (f && f.data) {
+                            const uploadRes = await cloudinary.uploader.upload(f.data, {
+                                resource_type: "auto",
+                                folder: "support_chat"
+                            });
+                            uploadedAttachments.push({
+                                url: uploadRes.secure_url,
+                                public_id: uploadRes.public_id,
+                                type: 'image',
+                                name: f.name,
+                                size: Math.round((f.data.length * 3) / 4)
+                            });
+                        }
+                    }
+                }
 
                 // Message created
                 const message = await MessageModel.create({
                     conversationId,
                     senderId: user._id,
                     senderRole: isCustomer ? 'customer' : 'admin',
-                    type: 'text',
-                    text: text.trim(),
+                    type: uploadedAttachments.length > 0 ? 'file' : 'text',
+                    text: text ? text.trim() : '',
+                    attachments: uploadedAttachments,
                     readBy: [{ userId: user._id, readAt: new Date() }],
                 });
+
+                const incField = isCustomer ? "unreadCountAdmin" : "unreadCountCustomer";
 
                 // Conversation updated
                 await ConversationModel.updateOne(
@@ -96,8 +121,11 @@ export const setupSocketIO = (server) => {
                     {
                         $set: {
                             lastMessageAt: message.createdAt,
-                            lastMessageText: message.text,
+                            lastMessageText: uploadedAttachments.length > 0 ? 'Sent an attachment' : message.text,
                             status: conv.status === "closed" ? "open" : conv.status
+                        },
+                        $inc: {
+                            [incField]: 1
                         }
                     },
                 );
@@ -114,6 +142,30 @@ export const setupSocketIO = (server) => {
                 ack?.({ ok: false, error: error.message || 'Send failed' });
             }
         });
+
+        socket.on("chat:markRead", async ({ conversationId }) => {
+            try {
+                const conv = await ConversationModel.findById(conversationId);
+                if (!conv) return;
+
+                const isCustomer = String(conv.customerId) === userId;
+                const isAdmin = role === "admin";
+                const isAssignedAdmin = conv.adminId && String(conv.adminId) === userId;
+
+                const allowed = isCustomer || isAdmin || isAssignedAdmin;
+                if (!allowed) return;
+
+                if (isCustomer) {
+                    await ConversationModel.updateOne({ _id: conversationId }, { $set: { unreadCountCustomer: 0 } });
+                } else {
+                    await ConversationModel.updateOne({ _id: conversationId }, { $set: { unreadCountAdmin: 0 } });
+                }
+            } catch (error) {
+                console.error("markRead error:", error);
+            }
+        });
+
+
     });
 
     return io;

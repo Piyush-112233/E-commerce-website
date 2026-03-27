@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { io, Socket } from "socket.io-client"
-import { ChatMessage } from "../types/chat.types";
+// import { ChatMessage } from "../types/chat.types";
 
 @Injectable({ providedIn: 'root' })
 
@@ -16,7 +16,7 @@ export class ChatSocketService {
             transports: ['websocket'],
             auth: token ? { token } : {},
         });
-        console.log("connect");
+        // console.log("connect");
     }
 
     onAuthOk(): Observable<{ userId: string; role: string }> {
@@ -29,9 +29,15 @@ export class ChatSocketService {
         this.socket.emit('chat:join', { conversationId });
     }
 
-    sendMessage(conversationId: string, text: string): Observable<any> {
+    markRead(conversationId: string) {
+        if (this.socket) {
+            this.socket.emit('chat:markRead', { conversationId });
+        }
+    }
+
+    sendMessage(conversationId: string, text: string, file: any[] = []): Observable<any> {
         return new Observable((observer) => {
-            this.socket.emit('chat:send', { conversationId, text }, (ack: any) => {
+            this.socket.emit('chat:send', { conversationId, text, file }, (ack: any) => {
                 if (ack?.ok) {
                     observer.next(ack.message);
                     observer.complete();

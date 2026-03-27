@@ -31,25 +31,41 @@ export class Chat implements OnInit, OnDestroy {
     this.loadConversations();
 
     this.sub.add(
+      // from socket service
       this.socket.onNewMessage().subscribe(({ conversationId, message }) => {
         if (this.selectedConversation?._id === conversationId) {
-          this.messages = [...this.messages, message];
-          setTimeout(() => this.scrollToBottom(), 0);
+          const exists = this.messages.some(m => m._id === message._id);
+          if (!exists) {
+            this.messages = [...this.messages, message];
+            setTimeout(() => this.scrollToBottom(), 0);
+          }
         }
 
-        this.conversations = this.conversations.map((c) =>
-          c._id === conversationId
-            ? { ...c, lastMessageText: message.text, lastMessageAt: message.createdAt }
-            : c
-        );
+        this.conversations = this.conversations.map((c) => {
+          if (c._id === conversationId) {
+            // read function
+            const isSelected = this.selectedConversation?._id === conversationId;
+            if (isSelected) {
+              this.socket.markRead(conversationId);
+            }
+            return {
+              ...c,
+              lastMessageText: message.text,
+              lastMessageAt: message.createdAt,
+              unreadCountAdmin: isSelected ? 0 : (c.unreadCountAdmin || 0) + (message.senderRole === 'customer' ? 1 : 0)
+            };
+          }
+          return c;
+        });
       })
     );
   }
 
   loadConversations() {
+    // from api service
     this.api.getAdminConversations(this.statusFilter, 50).subscribe({
       next: (res) => {
-        console.log('admin conversation', res)
+        // console.log('admin conversation', res)
         this.conversations = res.data.conversation ?? []; // verify backend key
         if (this.selectedConversation) {
           this.selectedConversation =
@@ -64,6 +80,9 @@ export class Chat implements OnInit, OnDestroy {
     this.selectedConversation = conv;
     this.messages = [];
     this.socket.joinConversation(conv._id);
+    // read function
+    this.socket.markRead(conv._id);
+    conv.unreadCountAdmin = 0;
 
     this.api.getMessage(conv._id, 50).subscribe({
       next: (res) => {
@@ -96,14 +115,33 @@ export class Chat implements OnInit, OnDestroy {
     });
   }
 
+  // from socket service...
   sendMessage() {
     const text = this.messageText.trim();
     if (!this.selectedConversation || !text) return;
 
     const convId = this.selectedConversation._id;
+    this.messageText = '';
+
     this.socket.sendMessage(convId, text).subscribe({
-      next: () => { this.messageText = ''; },
-      error: (err) => alert(err)
+      next: (newMsg) => {
+        if (newMsg) {
+          const exists = this.messages.some(m => m._id === newMsg._id);
+          if (!exists) {
+            this.messages = [...this.messages, newMsg];
+            setTimeout(() => this.scrollToBottom(), 0);
+          }
+          this.conversations = this.conversations.map((c) =>
+            c._id === convId
+              ? { ...c, lastMessageText: newMsg.text, lastMessageAt: newMsg.createdAt }
+              : c
+          );
+        }
+      },
+      error: (err) => {
+        console.error(err);
+        this.messageText = text; // Restore on error
+      }
     });
   }
 

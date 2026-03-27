@@ -1,28 +1,47 @@
 <div class="chat-wrapper">
-  <h2>Support Chat</h2>
+  <div class="chat-header">Support Chat</div>
 
+  <!-- Messages Section -->
   <div id="chat-scroll-container" class="chat-messages">
-    <div
-      *ngFor="let msg of messages; trackBy: trackByMsgId"
-      class="msg"
-      [class.customer]="msg.senderRole === 'customer'"
-      [class.admin]="msg.senderRole === 'admin'"
-    >
+    <div *ngFor="let msg of messages; trackBy: trackByMsgId" class="msg"
+      [class.customer]="msg.senderRole === 'customer'" [class.admin]="msg.senderRole === 'admin'">
       <div class="meta">
         <span>{{ msg.senderRole }}</span>
         <small>{{ msg.createdAt | date:'short' }}</small>
       </div>
       <div class="text">{{ msg.text }}</div>
+
+      <!-- Display attachments if any -->
+      <div *ngIf="msg.attachments && msg.attachments.length > 0" class="attachments">
+        <img *ngFor="let att of msg.attachments" [src]="att.url" alt="attachment" class="attachment-img">
+      </div>
     </div>
   </div>
 
+  <!-- Input Section -->
   <div class="chat-input">
-    <input
-      type="text"
-      [(ngModel)]="messageText"
-      (keyup.enter)="sendMessage()"
-      placeholder="Type message..."
-    />
-    <button (click)="sendMessage()">Send</button>
+    <!-- File preview -->
+    <div *ngIf="selectedFile" class="file-preview">
+      <span>{{ fileName }}</span>
+      <button type="button" (click)="removeSelectedFile()" class="remove-btn">✕</button>
+    </div>
+
+    <!-- Input row -->
+    <div class="input-row">
+      <input type="text" [(ngModel)]="messageText" (keyup.enter)="sendMessage()" placeholder="Type message..."
+        [disabled]="isUploading" />
+
+      <!-- Attach button / Hidden input -->
+      <label class="attach-btn" [class.disabled]="isUploading" style="cursor: pointer;">
+        📎
+        <input type="file" (change)="onFileSelected($event)" accept="image/*" style="display: none;"
+          [disabled]="isUploading">
+      </label>
+
+      <!-- Send button -->
+      <button type="button" (click)="sendMessage()" [disabled]="isUploading || (!messageText.trim() && !selectedFile)">
+        {{ isUploading ? 'Uploading...' : 'Send' }}
+      </button>
+    </div>
   </div>
 </div>

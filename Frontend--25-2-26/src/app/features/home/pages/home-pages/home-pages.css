@@ -1,0 +1,82 @@
+/* Home/Floating Button & Window */
+.chat-floating-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #007bff;
+    color: white;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 999;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-floating-btn:hover {
+    background: #0056b3;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    transform: scale(1.1);
+}
+
+.chat-floating-window {
+    position: fixed;
+    bottom: 100px;
+    right: 24px;
+    width: 380px;
+    height: 500px;
+    z-index: 998;
+    animation: slideUp 0.3s ease-out;
+    box-shadow: 0 5px 40px rgba(0, 0, 0, 0.16);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 480px) {
+    .chat-floating-window {
+        width: 100%;
+        height: 100%;
+        bottom: 0;
+        right: 0;
+        border-radius: 0;
+    }
+}
+
+.home-content {
+    padding: 24px;
+}
+
+.chat-unread-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #ef4444;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}

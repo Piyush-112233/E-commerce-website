@@ -51,8 +51,9 @@ export class ProductService {
     return this.http.delete(url)
   }
 
-    bulkCreateProducts(products: any[]) {
-      const url = `http://localhost:3000/api/admin/products/bulk`
-      return this.http.post(url,{products});
-    }
+
+  bulkCreateProducts(products: any[]) {
+    const url = `http://localhost:3000/api/admin/products/bulk`
+    return this.http.post(url, { products });
   }
+}

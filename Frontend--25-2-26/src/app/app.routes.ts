@@ -21,10 +21,5 @@ export const routes: Routes = [
     canMatch: [userAreaGuard],
     loadChildren: () => import('./features/home/home.routes').then((m) => m.homeRoutes),
   },
-
-  {path: 'chat', 
-    loadComponent: () => import('./features/chat/pages/chat-page-component/chat-page-component').then((m) => m.ChatPageComponent)
-  },
-
   { path: '**', redirectTo: '' },
 ];

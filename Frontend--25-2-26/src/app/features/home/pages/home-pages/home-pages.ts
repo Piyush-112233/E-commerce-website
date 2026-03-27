@@ -1,37 +1,47 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChatPageComponent } from '../../../chat/pages/chat-page-component/chat-page-component';
+import { CommonModule } from '@angular/common';
+import { ChatFacadeService } from '../../../chat/services/chat-facade.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-home-pages',
-  imports: [],
+  imports: [ChatPageComponent, CommonModule],
   templateUrl: './home-pages.html',
   styleUrl: './home-pages.css',
 })
-export class HomePages {
+export class HomePages implements OnInit, OnDestroy {
+  isChatOpen: boolean = false;
+  hasOpenedChat: boolean = false;
+  unreadCount: number = 0;
+  private sub = new Subscription();
 
-  // constructor(
-  //   private route: ActivatedRoute,
-  //   private router: Router
-  // ) { }
+  constructor(private chatFacade: ChatFacadeService) { }
 
-  // ngOnInit() {
-  //   this.route.queryParams.subscribe(params => {
-  //     console.log("------1")
-  //     const token = params['accessToken'];
-  //     console.log("Token from URL:", params);
 
-  //     if (token) {
-  //       // localStorage.setItem("token", token)
+  ngOnInit() {
+    this.sub.add(
+      this.chatFacade.unreadCount$.subscribe(count => {
+        this.unreadCount = count;
+        // If chat is open while a message arrives, instantly mark it as read
+        if (this.isChatOpen && this.unreadCount > 0) {
+          this.chatFacade.markAsRead();
+        }
+      })
+    );
+  }
 
-  //       // remove token from URL
-  //       this.router.navigate([], {
-  //         queryParams: {},
-  //         replaceUrl: true
-  //       });
+  toggleChat() {
+    this.isChatOpen = !this.isChatOpen;
+    if (this.isChatOpen) {
+      this.hasOpenedChat = true;      // for network call are made when hit then widget icon of chat
+      if (this.unreadCount > 0) {
+        this.chatFacade.markAsRead();
+      }
+    }
+  }
 
-  //       // // reload so navbar updates
-  //       // window.location.reload();
-  //       console.log("Token Saved", token);
-  //     }
-  //   })
-  // }
+  ngOnDestroy() {
+    this.sub.unsubscribe();
+  }
 }

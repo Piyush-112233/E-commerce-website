@@ -20,12 +20,13 @@ const message = new mongoose.Schema({
         index: true
     },
     attachments: [
-        {
+        new mongoose.Schema({
             url: String,
-            type: String,
+            public_id: String,
+            type: { type: String },
             name: String,
             size: Number
-        }
+        })
     ],
     readBy: [
         {
@@ -35,7 +36,7 @@ const message = new mongoose.Schema({
     ],
     type: {
         type: String,
-        enum: ['text'],
+        enum: ['text', 'file'],
         default: 'text'
     },
     text: {

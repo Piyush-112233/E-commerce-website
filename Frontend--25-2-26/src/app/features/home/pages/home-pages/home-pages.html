@@ -1,3 +1,20 @@
-<span>
-    Welcome to home pages
-</span>
+<div class="home-content">
+    <h1>Welcome to the Home Screen</h1>
+</div>
+
+
+<!-- 1. The Floating Button -->
+<button class="chat-floating-btn" (click)="toggleChat()">
+    <span *ngIf="!isChatOpen">💬</span>
+    <span *ngIf="isChatOpen">✖</span>
+    <!-- The unread badge "like other website" -->
+    <span class="chat-unread-badge" *ngIf="!isChatOpen && unreadCount > 0">{{ unreadCount }}</span>
+</button>
+
+<!-- 2. The Floating Window (Changed to *ngIf) -->
+<div class="chat-floating-window" [style.display]="isChatOpen ? 'flex' : 'none'">
+
+    <!-- Your chat component -->
+    <app-chat-page-component *ngIf="hasOpenedChat" class="chat-wrapper"></app-chat-page-component>
+
+</div>

@@ -5,6 +5,14 @@ export interface Conversation {
     status: 'open' | 'assigned' | 'pending' | 'closed';
     lastMessageAt: string;
     lastMessageText: string;
+    unreadCountCustomer: number;
+    unreadCountAdmin: number;
+}
+
+export interface Attachment {
+    url: string;
+    public_id: string;
+    type: 'image' | 'file';
 }
 
 export interface ChatMessage {
@@ -12,9 +20,15 @@ export interface ChatMessage {
     conversationId: string;
     senderId: string;
     senderRole: 'customer' | 'admin';
-    type: 'text';
     text: string;
-    createdAt: string;
+    attachments?: Attachment[];  // ← ADD THIS LINE
+    type: 'text' | 'file';
+    readBy: Array<{
+        userId: string;
+        readAt: Date;
+    }>;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface ApiResponse<T> {

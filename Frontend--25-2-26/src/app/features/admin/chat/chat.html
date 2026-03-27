@@ -15,7 +15,10 @@
 
     <div class="conv-item" *ngFor="let conv of conversations; trackBy: trackByConv" (click)="selectConversation(conv)"
       [class.active]="selectedConversation?._id === conv._id">
-      <div><b>{{ conv._id }}</b></div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <b>{{ conv._id }}</b>
+        <span class="badge unread-badge" *ngIf="conv.unreadCountAdmin > 0">{{ conv.unreadCountAdmin }}</span>
+      </div>
       <div>Status: {{ conv.status }}</div>
       <small>{{ conv.lastMessageText || 'No messages yet' }}</small>
     </div>
@@ -42,6 +45,12 @@
           <small>{{ msg.createdAt | date:'short' }}</small>
         </div>
         <div>{{ msg.text }}</div>
+        <!-- Display attachments if any -->
+        <div *ngIf="msg.attachments && msg.attachments.length > 0" class="attachments"
+          style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+          <img *ngFor="let att of msg.attachments" [src]="att.url" alt="attachment"
+            style="max-width: 120px; max-height: 120px; border-radius: 8px; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.3);">
+        </div>
       </div>
     </div>
 

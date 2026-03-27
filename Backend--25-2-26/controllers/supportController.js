@@ -13,7 +13,6 @@ export const conversation = async (req, res) => {
     try {
         const user = req.user;
 
-        // "customer" side can be both customer + user roles in DB terms.
         // (Socket senderRole is derived from conversation.customerId, not the JWT role string.)
         if (user.role === "admin") {
             return res.status(403).json({ message: "Admins cannot create new customer conversations" });
@@ -124,7 +123,7 @@ export const MessageforConversation = async (req, res) => {
             )
         }
 
-        const limit = Math.min(parseInt(req.query.limit || "30", 10), 100);
+        const limit = Math.min(parseInt(req.query.limit || "8", 10), 100);
 
         const before = req.query.before ? new Date(req.query.before) : new Date();
 

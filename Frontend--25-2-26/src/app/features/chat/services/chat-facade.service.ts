@@ -11,31 +11,72 @@ export class ChatFacadeService {
     private messageSubject = new BehaviorSubject<ChatMessage[]>([]);
     readonly message$ = this.messageSubject.asObservable();
 
+    private unreadSubject = new BehaviorSubject<number>(0);
+    readonly unreadCount$ = this.unreadSubject.asObservable();
+
     constructor(
         private api: ChatApiService,
         private socket: ChatSocketService
     ) { }
 
     async init(token?: string) {
+
+        // from api service
         const convRes = await this.api.createOrGetConversation().toPromise();
         const conv = convRes!.data.conv;
         this.conversation$.next(conv);
+        this.socket.connect(token);
+        this.socket.joinConversation(conv._id);
+
+        this.unreadSubject.next(conv.unreadCountCustomer || 0);
 
         const msgRes = await this.api.getMessage(conv._id).toPromise();
         const msg = msgRes!.data.messages || [];
         this.messageSubject.next(msg);
 
-        this.socket.connect(token);
-        this.socket.joinConversation(conv._id);
-
         this.socket.onNewMessage().subscribe(({ message }) => {
-            this.messageSubject.next([...(this.messageSubject.value ?? []), message]);
+            const currentMsgs = this.messageSubject.value ?? [];
+            const exists = currentMsgs.some(m => m._id === message._id);
+            if (!exists) {
+                this.messageSubject.next([...currentMsgs, message]);
+                if (message.senderRole === 'admin') {
+                    this.unreadSubject.next(this.unreadSubject.value + 1);
+                }
+            }
         });
     }
 
-    send(text: string) {
+    markAsRead() {
         const conv = this.conversation$.value;
-        if (!conv || !text.trim()) return;
-        this.socket.sendMessage(conv._id, text.trim()).subscribe();
+        if (conv) {
+            this.socket.markRead(conv._id);
+            this.unreadSubject.next(0);
+        }
+    }
+
+    send(text: string, file: any[] = []): Promise<any> {
+        return new Promise((resolve, reject) => {
+            const conv = this.conversation$.value;
+            if (!conv || (!text.trim() && file.length === 0)) {
+                resolve(null);
+                return;
+            }
+            this.socket.sendMessage(conv._id, text.trim(), file).subscribe({
+                next: (newMsg) => {
+                    if (newMsg) {
+                        const currentMsgs = this.messageSubject.value ?? [];
+                        const exists = currentMsgs.some(m => m._id === newMsg._id);
+                        if (!exists) {
+                            this.messageSubject.next([...currentMsgs, newMsg]);
+                        }
+                    }
+                    resolve(newMsg);
+                },
+                error: (err) => {
+                    console.error('Failed to send message:', err);
+                    reject(err);
+                }
+            });
+        });
     }
 }
