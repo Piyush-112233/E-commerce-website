@@ -123,7 +123,7 @@ export const MessageforConversation = async (req, res) => {
             )
         }
 
-        const limit = Math.min(parseInt(req.query.limit || "8", 10), 100);
+        const limit = Math.min(parseInt(req.query.limit || "30", 10), 100);
 
         const before = req.query.before ? new Date(req.query.before) : new Date();
 

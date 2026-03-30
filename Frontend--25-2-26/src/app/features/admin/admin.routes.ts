@@ -11,8 +11,7 @@ export const adminRoutes: Routes = [
                 path: "products", loadComponent: () => import("./admin-product/admin-product").then((c) => c.AdminProduct)
             },
             {
-                path: 'chat',
-                loadComponent: () => import('./chat/chat').then((m) => m.Chat)
+                path: 'chat', loadComponent: () => import('./chat/chat').then((c) => c.Chat)
             },
         ]
     }

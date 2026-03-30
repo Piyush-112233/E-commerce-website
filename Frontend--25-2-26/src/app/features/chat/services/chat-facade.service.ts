@@ -20,7 +20,6 @@ export class ChatFacadeService {
     ) { }
 
     async init(token?: string) {
-
         // from api service
         const convRes = await this.api.createOrGetConversation().toPromise();
         const conv = convRes!.data.conv;
@@ -30,9 +29,12 @@ export class ChatFacadeService {
 
         this.unreadSubject.next(conv.unreadCountCustomer || 0);
 
-        const msgRes = await this.api.getMessage(conv._id).toPromise();
-        const msg = msgRes!.data.messages || [];
-        this.messageSubject.next(msg);
+        // const msgRes = await this.api.getMessage(conv._id).toPromise();
+        // const msg = msgRes!.data.messages || [];
+        // this.messageSubject.next(msg);
+        // Clear previous messages and load fresh
+        this.messageSubject.next([]);
+        await this.loadMore();
 
         this.socket.onNewMessage().subscribe(({ message }) => {
             const currentMsgs = this.messageSubject.value ?? [];
@@ -44,6 +46,30 @@ export class ChatFacadeService {
                 }
             }
         });
+    }
+
+    private loadingMore = false;
+    async loadMore() {
+        if (this.loadingMore) return;
+        const conv = this.conversation$.value;
+        if (!conv) return;
+
+        this.loadingMore = true;
+        try {
+            const currentMsgs = this.messageSubject.value || [];
+            const before = currentMsgs.length > 0 ? currentMsgs[0].createdAt : undefined;
+
+            const res = await this.api.getMessage(conv._id, 30, before).toPromise();
+            const olderMsgs = res?.data.messages || [];
+
+            if (olderMsgs.length > 0) {
+                this.messageSubject.next([...olderMsgs, ...currentMsgs]);
+            }
+        } catch (err) {
+            console.error('Failed to load older messages:', err);
+        } finally {
+            this.loadingMore = false;
+        }
     }
 
     markAsRead() {

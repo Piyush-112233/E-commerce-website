@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, NgZone } from '@angular/core';
 import { ChatMessage, Conversation } from '../../chat/types/chat.types';
 import { ChatApiService } from '../../chat/services/chat-api.service';
 import { ChatSocketService } from '../../chat/services/chat-socket.service';
@@ -23,7 +23,8 @@ export class Chat implements OnInit, OnDestroy {
 
   constructor(
     private api: ChatApiService,
-    private socket: ChatSocketService
+    private socket: ChatSocketService,
+    private ngZone: NgZone
   ) { }
 
   ngOnInit(): void {
@@ -37,7 +38,9 @@ export class Chat implements OnInit, OnDestroy {
           const exists = this.messages.some(m => m._id === message._id);
           if (!exists) {
             this.messages = [...this.messages, message];
-            setTimeout(() => this.scrollToBottom(), 0);
+            if (!this.maintainingScroll) {
+              setTimeout(() => this.scrollToBottom(), 0);
+            }
           }
         }
 
@@ -87,10 +90,46 @@ export class Chat implements OnInit, OnDestroy {
     this.api.getMessage(conv._id, 50).subscribe({
       next: (res) => {
         this.messages = res.data.messages ?? []; // verify backend key
+        this.maintainingScroll = false; // Reset on new conversation
         setTimeout(() => this.scrollToBottom(), 0);
       },
       error: (err) => console.error(err),
     });
+  }
+
+  private loadingMore = false;
+  private maintainingScroll = false;
+  async onScroll(event: Event) {
+    const el = event.target as HTMLElement;
+    if (el.scrollTop === 0 && this.messages.length > 0 && !this.loadingMore) {
+      const prevHeight = el.scrollHeight;
+      this.loadingMore = true;
+      this.maintainingScroll = true;
+
+      const before = this.messages[0].createdAt;
+      this.api.getMessage(this.selectedConversation!._id, 30, before).subscribe({
+        next: (res) => {
+          const older = res.data.messages || [];
+          if (older.length > 0) {
+            this.messages = [...older, ...this.messages];
+
+            this.ngZone.runOutsideAngular(() => {
+              setTimeout(() => {
+                const newHeight = el.scrollHeight;
+                el.scrollTop = newHeight - prevHeight;
+                this.maintainingScroll = false;
+              }, 50);
+            });
+          }
+          this.loadingMore = false;
+        },
+        error: (err) => {
+          console.error(err);
+          this.loadingMore = false;
+          this.maintainingScroll = false;
+        }
+      });
+    }
   }
 
   assignSelected() {
@@ -150,7 +189,7 @@ export class Chat implements OnInit, OnDestroy {
 
   private scrollToBottom() {
     const el = document.getElementById('admin-chat-scroll');
-    if (el) el.scrollTop = el.scrollHeight;
+    if (el && !this.maintainingScroll) el.scrollTop = el.scrollHeight;
   }
 
   ngOnDestroy(): void {

@@ -45,13 +45,15 @@ app.use('/api',chatRouter)
 const server = http.createServer(app);
 setupSocketIO(server);
 
-server.listen(PORT, () => {
-    try {
-        connectDb();
-        console.log(`server is running on port ${PORT}`)
-    } catch (error) {
-        console.log("MONGO db connection failed !!!", error)
-    }
-})
+connectDb()
+    .then(() => {
+        server.listen(PORT, () => {
+            console.log(`server is running on port ${PORT}`);
+        });
+    })
+    .catch((error) => {
+        console.error("MONGO db connection failed !!!", error);
+        process.exit(1);
+    });
 
 export default app;

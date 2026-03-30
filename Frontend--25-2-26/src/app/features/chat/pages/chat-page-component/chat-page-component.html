@@ -2,7 +2,7 @@
   <div class="chat-header">Support Chat</div>
 
   <!-- Messages Section -->
-  <div id="chat-scroll-container" class="chat-messages">
+  <div id="chat-scroll-container" class="chat-messages" (scroll)="onScroll($event)">
     <div *ngFor="let msg of messages; trackBy: trackByMsgId" class="msg"
       [class.customer]="msg.senderRole === 'customer'" [class.admin]="msg.senderRole === 'admin'">
       <div class="meta">

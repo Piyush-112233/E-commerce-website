@@ -37,7 +37,7 @@
       </div>
     </div>
 
-    <div id="admin-chat-scroll" class="messages">
+    <div id="admin-chat-scroll" class="messages" (scroll)="onScroll($event)">
       <div class="msg" *ngFor="let msg of messages; trackBy: trackByMsg"
         [class.customer]="msg.senderRole === 'customer'" [class.admin]="msg.senderRole === 'admin'">
         <div class="meta">

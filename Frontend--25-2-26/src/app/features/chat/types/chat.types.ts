@@ -25,10 +25,10 @@ export interface ChatMessage {
     type: 'text' | 'file';
     readBy: Array<{
         userId: string;
-        readAt: Date;
+        readAt: string;
     }>;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface ApiResponse<T> {

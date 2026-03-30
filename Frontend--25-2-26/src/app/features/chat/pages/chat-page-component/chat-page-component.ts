@@ -1,4 +1,4 @@
-import { Component, NgZone } from '@angular/core';
+import { Component, NgZone, HostListener } from '@angular/core';
 import { ChatMessage } from '../../types/chat.types';
 import { Subscription } from 'rxjs';
 import { ChatFacadeService } from '../../services/chat-facade.service';
@@ -29,10 +29,34 @@ export class ChatPageComponent {
       this.chatFacade.message$.subscribe((msgs) => {
         this.ngZone.run(() => {
           this.messages = msgs;
-          setTimeout(() => this.scrollToBottom(), 0);
+          // Determine if we should scroll to bottom (only on fresh messages/init)
+          // or if we should maintain position (after loading more)
+          if (!this.maintainingScroll) {
+            setTimeout(() => this.scrollToBottom(), 0);
+          }
         })
       })
     );
+  }
+
+  private maintainingScroll = false;
+  async onScroll(event: Event) {
+    const el = event.target as HTMLElement;
+    if (el.scrollTop === 0 && this.messages.length > 0) {
+      const prevHeight = el.scrollHeight;
+      this.maintainingScroll = true;
+
+      await this.chatFacade.loadMore();
+
+      // Adjust scroll to maintain position
+      this.ngZone.runOutsideAngular(() => {
+        setTimeout(() => {
+          const newHeight = el.scrollHeight;
+          el.scrollTop = newHeight - prevHeight;
+          this.maintainingScroll = false;
+        }, 50);
+      });
+    }
   }
 
 
