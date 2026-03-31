@@ -4,6 +4,9 @@ import { ApiResponse } from "../validators/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import emailQueue from "../bullMq/queue.js/email.queue.js";
+import ProductModel from "../model/product.model.js";
+import cartModel from "../model/cart.model.js";
+import WishListModel from "../model/wishList.model.js";
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -534,12 +537,9 @@ const auth = async (req, res) => {
 //     }
 // }
 
-export { signUpUser, verifyEmail, loginUser, forgetPassword, resetPassword, logoutUser, RefreshAccessToken, changeCurrentPassword, updateAccountDetails, getUserProfile, auth , getUsers}
-
-
 
 const getUsers = async (req, res) => {
-    const {page = 1, limit = 10} = req.query;
+    const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
 
     const users = await UserModel.find().populate('-password').skip(skip).limit(limit);
@@ -551,3 +551,342 @@ const getUsers = async (req, res) => {
         })
     )
 }
+
+
+// cart
+
+// add item to cart
+const addToCart = async (req, res) => {
+    try {
+        const { productId, quantity } = req.body;
+        const userId = req.user._id;
+
+        // Validate input
+        if (!productId || !quantity || quantity < 1) {
+            return res.status(400).json(
+                new ApiError(400, "Invalid product ID or quantity")
+            );
+        }
+
+        // check if product exists
+        const product = await ProductModel.findById(productId);
+        if (!product) {
+            return res.status(404).json(
+                new ApiError(404, "Product not found")
+            );
+        }
+
+        // find or create cart
+
+        let cart = await cartModel.findOne({ userId });
+        if (!cart) {
+            cart = new cartModel({ userId, items: [] })
+        }
+
+        // check if item already exists in cart
+
+        const existingItem = cart.items.find(
+            (item) => item.productId.toString() === productId
+        );
+
+        if (existingItem) {
+            existingItem.quantity += quantity;
+        } else {
+            cart.items.push({
+                productId,
+                quantity,
+                price: product.price,
+                discount: product.discount || 0
+            });
+        }
+
+        await cart.save();
+
+        return res.status(201).json(
+            new ApiResponse(
+                200,
+                cart,
+                "Product added to cart successfully"
+            )
+        );
+
+    } catch (error) {
+        return res.status(500).json(
+            new ApiError(500, `Server Error: ${error.message}`)
+        );
+    }
+}
+
+// get cart
+const getCart = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const cart = await cartModel.findOne({ userId }).populate({ path: 'items.productId', select: 'name price discount imageUrl' });
+
+        if (!cart) {
+            return res.status(200).json(
+                new ApiResponse(200, { items: [] }, "Cart is empty")
+            );
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, cart, "Cart retrieved successfully")
+        );
+    } catch (error) {
+        return res.status(500).json(
+            new ApiError(500, `Server Error: ${error.message}`)
+        );
+    }
+}
+
+// update cart item quantity
+const updateCartItem = async (req, res) => {
+    try {
+        const { productId, quantity } = req.body;
+        const userId = req.user._id;
+
+        if (!productId || quantity < 1) {
+            return res.status(400).json(
+                new ApiError(400, "Invalid product ID or quantity")
+            );
+        }
+
+        const cart = await cartModel.findOne({ userId });
+        if (!cart) {
+            return res.status(404).json(
+                new ApiError(404, "Cart not found")
+            );
+        }
+
+        const item = cart.items.find((item) => item.productId.toString() === productId);
+
+        if (!item) {
+            return res.status(404).json(
+                new ApiError(404, "Product not found in cart")
+            );
+        }
+
+        item.quantity = quantity;
+        await cart.save();
+
+        return res.status(200).json(
+            new ApiResponse(200, cart, "Cart item updated successfully")
+        );
+
+    } catch (error) {
+        return res.status(500).json(
+            new ApiError(500, `Server Error: ${error.message}`)
+        );
+    }
+}
+
+// remove item from cart
+const removeFromCart = async (req, res) => {
+    try {
+        const { productId } = req.body;
+        const userId = req.user._id;
+
+        if (!productId) {
+            return res.status(400).json(
+                new ApiError(400, "Product ID is required")
+            );
+        }
+
+        const cart = await cartModel.findOne({ userId });
+        if (!cart) {
+            return res.status(404).json(
+                new ApiError(404, "Cart not found")
+            );
+        }
+
+        cart.items = cart.items.filter((item) => item.productId.toString() !== productId);
+
+        await cart.save();
+
+        return res.status(200).json(
+            new ApiResponse(200, cart, "Item removed from cart successfully")
+        );
+    } catch (error) {
+        return res.status(500).json(
+            new ApiError(500, `Server Error: ${error.message}`)
+        );
+    }
+}
+
+// clear entire cart
+const clearCart = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const cart = await cartModel.findOneAndUpdate(
+            { userId },
+            { items: [], totalQuantity: 0, totalPrice: 0, totalDiscount: 0 },
+            { new: true }
+        );
+
+        return res.status(200).json(
+            new ApiResponse(200, cart, "Cart cleared successfully")
+        );
+    } catch (error) {
+        return res.status(500).json(
+            new ApiError(500, `Server Error: ${error.message}`)
+        );
+    }
+}
+
+// sync local cart to database (when user logs in)
+const syncCart = async (req, res) => {
+    try {
+        const { localCart } = req.body;
+        const userId = req.user._id;
+
+        let cart = await cartModel.findOne({ userId });
+        if (!cart) {
+            cart = new cartModel({ userId, items: [] })
+        }
+
+
+        // Merge localcart with database cart
+        for (const localItem of localCart) {
+            const product = await ProductModel.findById(localItem.productId);
+            if (!product) continue;
+
+            const existingItem = cart.items.find(
+                (item) => item.productId.toString() === localItem.productId
+            );
+
+            if (existingItem) {
+                existingItem.quantity += localItem.quantity
+            } else {
+                cart.items.push({
+                    productId: localItem.productId,
+                    quantity: localItem.quantity,
+                    price: product.price,
+                    discount: product.discount || 0
+                });
+            }
+
+        }
+        await cart.save();
+        return res.status(200).json(
+            new ApiResponse(200, cart, "Cart synced successfully")
+        );
+    } catch (error) {
+        return res.status(500).json(
+            new ApiError(500, `Server Error: ${error.message}`)
+        );
+    }
+}
+
+
+
+
+// wishList
+
+// add to wishlist
+const addToWishlist = async (req, res) => {
+    try {
+        const { productId } = req.body;
+        const userId = req.user._id;
+
+        if (!productId) {
+            return res.status(400).json(
+                new ApiError(400, "Product ID is required")
+            );
+        }
+
+        // check if product exist
+        const product = await ProductModel.findById(productId);
+        if (!product) {
+            return res.status(404).json(
+                new ApiError(404, "Product not found")
+            );
+        }
+
+
+        let wishlist = await WishListModel.findOne({ userId });
+        if (!wishlist) {
+            wishlist = new WishListModel({ userId, products: [] });
+        }
+
+        // Check if product already in wishlist
+        const exists = wishlist.products.find(item =>
+            item.productId.toString() === productId
+        );
+
+        if (exists) {
+            return res.status(400).json(
+                new ApiError(400, "Product already in wishlist")
+            );
+        }
+
+        wishlist.products.push({ productId });
+        await wishlist.save();
+
+        return res.status(201).json(
+            new ApiResponse(200, wishlist, "Product added to wishlist successfully")
+        );
+    } catch (error) {
+        return res.status(500).json(
+            new ApiError(500, `Server Error: ${error.message}`)
+        );
+    }
+}
+
+// get wishlist
+const getWishlist = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const wishlist = await WishListModel.findOne({ userId }).populate({ path: 'products.productId', select: "name price discount imageUrl" });
+
+        if (!wishlist) {
+            return res.status(200).json(
+                new ApiResponse(200, { products: [] }, "WishList is empty")
+            )
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, wishlist, "WishList retrieved successfully")
+        );
+    } catch (error) {
+        return res.status(500).json(
+            new ApiError(500, `Server Error: ${error.message}`)
+        );
+    }
+}
+
+// remove from wishlist
+const removeFromWishList = async (req, res) => {
+    try {
+        const { productId } = req.body;
+        const userId = req.user._id;
+
+        if (!productId) {
+            return res.status(400).json(
+                new ApiError(400, "Product ID is required")
+            );
+        }
+
+        const wishList = await WishListModel.findOne({ userId });
+        if (!wishList) {
+            return res.status(404).json(
+                new ApiError(404, "wishlist not found")
+            );
+        }
+
+        wishList.products = wishList.products.filter(
+            (item) => item.productId.toString() !== productId
+        );
+
+        await wishList.save();
+
+        return res.status(200).json(
+            new ApiResponse(200, wishList, "Product removed from Wishlist successfully")
+        );
+    } catch (error) {
+        return res.status(500).json(
+            new ApiError(500, `Server Error: ${error.message}`)
+        );
+    }
+}
+export { signUpUser, verifyEmail, loginUser, forgetPassword, resetPassword, logoutUser, RefreshAccessToken, changeCurrentPassword, updateAccountDetails, getUserProfile, auth, getUsers, addToCart, getCart, updateCartItem, removeFromCart, clearCart, syncCart, addToWishlist, getWishlist, removeFromWishList }

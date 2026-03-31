@@ -26,6 +26,7 @@ export class ChatApiService {
     }
 
     getMessage(conversationId: string, limit = 30, before?: string) {
+        // console.log(limit)
         let url = `${this.baseUrl}/conversations/${conversationId}/messages?limit=${limit}`;
         if (before) url += `&before=${encodeURIComponent(before)}`;
 

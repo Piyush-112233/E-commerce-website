@@ -124,5 +124,12 @@ export class AuthService {
     this.loaded = true;
     this.meSubject.next(null);
   }
+
+
+  // Add this method to your AuthService if you don't have it
+  isAuthenticated(): boolean {
+    const token = localStorage.getItem('accessToken'); // or however you store your token
+    return !!token;
+  }
 }
 
