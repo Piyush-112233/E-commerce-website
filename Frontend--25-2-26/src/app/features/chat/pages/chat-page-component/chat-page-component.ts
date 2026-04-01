@@ -23,7 +23,7 @@ export class ChatPageComponent {
   constructor(public chatFacade: ChatFacadeService, private ngZone: NgZone) { }
 
   ngOnInit(): void {
-    this.chatFacade.init();
+    this.chatFacade.init(undefined, true);
 
     this.sub.add(
       this.chatFacade.message$.subscribe((msgs) => {

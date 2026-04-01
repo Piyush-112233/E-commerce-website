@@ -1,9 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { checkPasswordValidation } from '../../validators/checkPassword.Validators';
 import { AuthService } from '../../../../core/service/authService/auth-service';
+import { CartService } from '../../../../core/service/cartService/cart-service';
 import { Router, RouterLink } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-login-pages',
@@ -15,6 +15,7 @@ export class LoginPages {
   constructor(
     private LoginDetails: FormBuilder,
     private auth: AuthService,
+    private cartService: CartService,
     private router: Router
   ) { }
 
@@ -23,13 +24,12 @@ export class LoginPages {
   ngOnInit() {
     this.loginForm = this.LoginDetails.group(
       {
-        email: ['', [Validators.required, Validators.maxLength(50), Validators.pattern('^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$')]],
+        email: ['', [Validators.required, Validators.maxLength(50), Validators.pattern('^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$')]],
         password: ['', [Validators.required, Validators.minLength(5), checkPasswordValidation()]]
       }
     )
   }
 
-  // private auth = inject(AuthService);
   login() {
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
@@ -43,6 +43,12 @@ export class LoginPages {
         // Store accessToken for Socket.IO fallback auth (backend also uses cookies).
         const token = res?.data?.accessToken ?? res?.accessToken;
         if (token) localStorage.setItem('accessToken', token);
+
+        // Sync any guest cart items to the database, then clear local storage
+        this.cartService.syncAndClearLocal().subscribe({
+          next: () => console.log('Local cart synced to DB after login'),
+          error: (err: any) => console.warn('Cart sync failed:', err)
+        });
 
         this.auth.refreshMe().subscribe({
           next: (me) => {
@@ -60,16 +66,6 @@ export class LoginPages {
       }
 
     })
-
-    // this.auth.getLoginDetails(value?.email).subscribe({
-    //   next: () => {
-
-    //   },
-    //   error: (err) => {
-    //     console.error(err)
-    //     alert("Failed refresh")
-    //   }
-    // })
 
   }
   loginWithGoogle() {

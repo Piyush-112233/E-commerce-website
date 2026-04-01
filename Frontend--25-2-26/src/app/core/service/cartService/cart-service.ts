@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { AuthService } from '../authService/auth-service';
 
 export interface CartItem {
   productId: string;
@@ -76,9 +77,9 @@ export class CartService {
 
 
   // Add to cart (handles both authenticated and non-authenticated users)
-  addToCart(productId: string, quantity: number = 1, isAuthenticated: boolean): Observable<any> {
+  addToCart(productId: string, quantity: number = 1, isAuthenticated: boolean, product?: any): Observable<any> {
     if (isAuthenticated) {
-      return this.http.post(`${this.apiUrl}/add`, { productId, quantity });
+      return this.http.post(`${this.apiUrl}/cart/add`, { productId, quantity });
     } else {
       // For non-authenticated users, use local storage
       const localCart = this.getLocalCart();
@@ -87,7 +88,13 @@ export class CartService {
       if (existingItem) {
         existingItem.quantity += quantity;
       } else {
-        localCart.push({ productId, quantity, price: 0, discount: 0 });
+        localCart.push({
+          productId,
+          quantity,
+          price: product?.price || 0,
+          discount: product?.discount || 0,
+          product: product
+        });
       }
       this.saveLocalCart(localCart);
       this.updateCartCount();
@@ -101,10 +108,10 @@ export class CartService {
   // Get Cart
   getCart(isAuthenticated: boolean): Observable<any> {
     if (isAuthenticated) {
-      return this.http.get(`${this.apiUrl}/get`);
+      return this.http.get(`${this.apiUrl}/cart/get`);
     } else {
       return new Observable(observer => {
-        observer.next({ data: { items: this.getLocalCart } });
+        observer.next({ data: { items: this.getLocalCart() } });
         observer.complete();
       })
     }
@@ -114,7 +121,7 @@ export class CartService {
   // Update cart item
   updateCartItem(productId: string, quantity: number, isAuthenticated: boolean): Observable<any> {
     if (isAuthenticated) {
-      return this.http.put(`${this.apiUrl}/update`, { productId, quantity });
+      return this.http.put(`${this.apiUrl}/cart/update`, { productId, quantity });
     } else {
       const localCart = this.getLocalCart();
       const item = localCart.find(i => i.productId === productId);
@@ -138,7 +145,7 @@ export class CartService {
   // remove from cart
   removeFromCart(productId: string, isAuthenticated: boolean): Observable<any> {
     if (isAuthenticated) {
-      return this.http.delete(`${this.apiUrl}/remove`, { body: productId })
+      return this.http.delete(`${this.apiUrl}/cart/remove`, { body: { productId } })
     } else {
       let localCart = this.getLocalCart();
       localCart = localCart.filter(item => item.productId !== productId);
@@ -155,7 +162,7 @@ export class CartService {
   // clear cart
   clearCart(isAuthenticated: boolean): Observable<any> {
     if (isAuthenticated) {
-      return this.http.delete(`${this.apiUrl}/clear`);
+      return this.http.delete(`${this.apiUrl}/cart/clear`);
     } else {
       this.saveLocalCart([]);
       this.updateCartCount();
@@ -172,12 +179,41 @@ export class CartService {
     if (isAuthenticated) {
       const localCart = this.getLocalCart();
       if (localCart.length > 0) {
-        return this.http.post(`${this.apiUrl}/sync`, { localCart });
+        return this.http.post(`${this.apiUrl}/cart/sync`, { localCart });
       }
     }
     return new Observable(observer => {
       observer.next({ success: true });
       observer.complete();
     });
+  }
+
+  // Sync local cart to DB then clear local storage (call after login)
+  syncAndClearLocal(): Observable<any> {
+    const localCart = this.getLocalCart();
+    if (localCart.length > 0) {
+      return new Observable(observer => {
+        this.http.post(`${this.apiUrl}/cart/sync`, { localCart }, { withCredentials: true }).subscribe({
+          next: (res) => {
+            this.saveLocalCart([]);
+            this.cartCountSubject.next(0);
+            observer.next(res);
+            observer.complete();
+          },
+          error: (err) => {
+            observer.error(err);
+          }
+        });
+      });
+    }
+    return new Observable(observer => {
+      observer.next({ success: true, message: 'No local cart to sync' });
+      observer.complete();
+    });
+  }
+
+  // Get raw local cart items (for display when not authenticated)
+  getLocalCartItems(): CartItem[] {
+    return this.getLocalCart();
   }
 }

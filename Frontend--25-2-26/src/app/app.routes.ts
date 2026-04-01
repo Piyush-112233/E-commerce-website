@@ -5,8 +5,7 @@ import { userAreaGuard } from './core/guards/user-area/user-area-guard';
 export const routes: Routes = [
   {
     path: 'auth',
-    loadChildren: () =>
-      import('./features/auth/auth.routes').then((m) => m.authRoutes),
+    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.authRoutes),
   },
 
   {

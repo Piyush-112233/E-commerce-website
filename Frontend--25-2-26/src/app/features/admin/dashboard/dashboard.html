@@ -1,48 +1,36 @@
-<div class="menu-container">
-    <h2>Admin Dashboard</h2>
-    <div class="dropdown">
+<div class="admin-shell">
 
-        <button class="dropbtn">
-            Manage Menu ▼
-        </button>
-
-        <div class="dropdown-content">
-
-            <a routerLink="categories">Manage Categories</a>
-
-            <a routerLink="products">Manage Products</a>
-
-            <a routerLink="chat">Manage Chats</a>
-
-        </div>
-
+  <!-- Admin top bar -->
+  <header class="admin-topbar">
+    <div class="admin-topbar-brand">
+      <span class="admin-brand-icon">⚙️</span>
+      <span class="admin-brand-name">Admin Dashboard</span>
     </div>
+
+    <nav class="admin-topbar-nav">
+      <a routerLink="categories" class="admin-nav-link">
+        <span class="material-icons">category</span>
+        Categories
+      </a>
+      <a routerLink="products" class="admin-nav-link">
+        <span class="material-icons">inventory_2</span>
+        Products
+      </a>
+      <a routerLink="chat" class="admin-nav-link">
+        <span class="material-icons">support_agent</span>
+        Chats
+      </a>
+
+      <button type="button" class="admin-logout-btn" (click)="logout()" id="admin-logout-btn">
+        <span class="material-icons">logout</span>
+        Logout
+      </button>
+    </nav>
+  </header>
+
+  <!-- Child route content -->
+  <main class="admin-content">
+    <router-outlet></router-outlet>
+  </main>
+
 </div>
-
-<!-- <div class="admin-chat-layout">
-    <div class="conversation-list">
-        <h3>Open Conversations</h3>
-        <button type="button" (click)="loadConversations()" [disabled]="loading">
-            {{ loading ? 'Loading...' : 'Refresh' }}
-        </button>
-
-        @if (conversations?.length) {
-            @for (c of conversations; track c._id) {
-                <div class="conv-item" (click)="startChat(c)">
-                    <div class="conv-title">Customer: {{ c.customerId }}</div>
-                    <div class="conv-last">{{ c.lastMessageText || '' }}</div>
-                </div>
-            }
-        } @else {
-            <div class="empty">No open conversations</div>
-        }
-    </div>
-
-     <div class="chat-panel">
-        <app-customer-chat-widget-component
-            [conversationId]="selectedConversationId"
-            [autoCreate]="false">
-        </app-customer-chat-widget-component>
-    </div>
-</div> -->
-<router-outlet></router-outlet>

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { Cart, CartItem, CartService } from '../../../core/service/cartService/cart-service';
 import { AuthService } from '../../../core/service/authService/auth-service';
 import { CommonModule } from '@angular/common';
@@ -16,14 +16,15 @@ export class CartSummary implements OnInit {
   cartCount: number = 0;
   isAuthenticated: boolean = false;
   loading: boolean = false;
+  @Output() onContinue = new EventEmitter<void>();
 
   constructor(
     private cartService: CartService,
-    // private authService: AuthService
+    private authService: AuthService
   ) { }
 
   ngOnInit(): void {
-    // this.isAuthenticated = this.authService.isAuthenticated();
+    this.isAuthenticated = this.authService.isAuthenticated();
 
     this.cartService.cart$.subscribe((cart: Cart | null) => {
       this.cart = cart;
@@ -37,9 +38,26 @@ export class CartSummary implements OnInit {
   }
 
 
-  loadCart(): void {
+  loadCart(event?: any): void {
+    if (event) event.preventDefault();
     this.loading = true;
-    this.cartService.getCart(this.isAuthenticated).subscribe({
+
+    if (!this.isAuthenticated) {
+      // Guest: read from localStorage
+      const items = this.cartService.getLocalCartItems();
+      this.cart = {
+        _id: 'local',
+        userId: 'guest',
+        items,
+        totalQuantity: items.reduce((s, i) => s + i.quantity, 0),
+        totalPrice: items.reduce((s, i) => s + i.price * i.quantity, 0),
+        totalDiscount: items.reduce((s, i) => s + (i.discount || 0) * i.quantity, 0),
+      };
+      this.loading = false;
+      return;
+    }
+
+    this.cartService.getCart(true).subscribe({
       next: (response: any) => {
         if (response.data) {
           this.cartService.updateCart(response.data);
@@ -50,7 +68,7 @@ export class CartSummary implements OnInit {
         this.loading = false;
       },
       error: (error: any) => {
-        console.log("Error loading cart", error);
+        console.log('Error loading cart', error);
         this.loading = false;
       }
     });
@@ -98,6 +116,13 @@ export class CartSummary implements OnInit {
     }
   }
 
+  getProductId(item: CartItem): string {
+    if (typeof item.productId === 'object' && item.productId) {
+      return (item.productId as any)._id || (item.productId as any).id;
+    }
+    return item.productId;
+  }
+
   getProductName(item: CartItem): string {
     if (typeof item.productId === 'object' && item.productId && 'name' in item.productId) {
       return (item.productId as any).name;
@@ -119,5 +144,9 @@ export class CartSummary implements OnInit {
       return 0;
     }
     return (this.cart.totalPrice || 0) - (this.cart.totalDiscount || 0);
+  }
+
+  continueShopping(): void {
+    this.onContinue.emit();
   }
 }

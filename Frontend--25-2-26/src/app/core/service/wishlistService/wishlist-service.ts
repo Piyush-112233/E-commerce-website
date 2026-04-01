@@ -27,7 +27,7 @@ export class WishlistService {
   // ADD to Wishlist
   addToWishlist(productId: string, isAuthenticated: boolean): Observable<any> {
     if (isAuthenticated) {
-      return this.http.post(`${this.apiUrl}/add`, { productId });
+      return this.http.post(`${this.apiUrl}/wishlist/add`, { productId });
     } else {
       const localWishlist = this.getLocalWishlist();
       if (localWishlist.includes(productId)) {
@@ -45,7 +45,7 @@ export class WishlistService {
   // GET Wishlist
   getWishlist(isAuthenticated: boolean): Observable<any> {
     if (isAuthenticated) {
-      return this.http.get(`${this.apiUrl}/get`);
+      return this.http.get(`${this.apiUrl}/wishlist/get`);
     } else {
       return new Observable(observer => {
         observer.next({ data: { products: this.getLocalWishlist() } });
@@ -58,7 +58,7 @@ export class WishlistService {
   // Remove from Wishlist
   removeFromWishList(productId: string, isAuthenticated: boolean) {
     if (isAuthenticated) {
-      return this.http.delete(`${this.apiUrl}/remove`, {
+      return this.http.delete(`${this.apiUrl}/wishlist/remove`, {
         body: { productId }
       });
     } else {

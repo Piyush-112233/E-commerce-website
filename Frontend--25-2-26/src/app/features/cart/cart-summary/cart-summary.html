@@ -7,7 +7,7 @@
 
   <div *ngIf="!loading && (!cart || cart.items.length === 0)" class="empty-cart">
     <p>Your cart is empty</p>
-    <a routerLink="/products" class="btn-continue-shopping">Continue Shopping</a>
+    <button (click)="continueShopping()" class="btn-continue-shopping" type="button">Continue Shopping</button>
   </div>
 
   <div *ngIf="!loading && cart && cart.items.length > 0" class="cart-content">
@@ -19,26 +19,25 @@
         </div>
 
         <div class="item-quantity">
-          <button (click)="updateQuantity(item.productId, item.quantity - 1)" type="button" class="qty-btn">-</button>
-          <input type="number" 
-                 [value]="item.quantity" 
-                 (change)="updateQuantity(item.productId, $any($event.target).value)" 
-                 min="1"
-                 class="qty-input">
-          <button (click)="updateQuantity(item.productId, item.quantity + 1)" type="button" class="qty-btn">+</button>
+          <button (click)="updateQuantity(getProductId(item), item.quantity - 1)" type="button"
+            class="qty-btn">-</button>
+          <input type="number" [value]="item.quantity"
+            (change)="updateQuantity(getProductId(item), $any($event.target).value)" min="1" class="qty-input">
+          <button (click)="updateQuantity(getProductId(item), item.quantity + 1)" type="button"
+            class="qty-btn">+</button>
         </div>
 
         <div class="item-total">
           <p>₹{{ getItemTotal(item).toFixed(2) }}</p>
         </div>
 
-        <button (click)="removeItem(item.productId)" class="btn-remove" type="button">Remove</button>
+        <button (click)="removeItem(getProductId(item))" class="btn-remove" type="button">Remove</button>
       </div>
     </div>
 
     <div class="cart-summary">
       <h3>Order Summary</h3>
-      
+
       <div class="summary-row">
         <span>Subtotal:</span>
         <span>₹{{ cart.totalPrice.toFixed(2) }}</span>
@@ -56,7 +55,7 @@
 
       <button routerLink="/checkout" class="btn-checkout" type="button">Proceed to Checkout</button>
       <button (click)="clearCart()" class="btn-clear" type="button">Clear Cart</button>
-      <a routerLink="/products" class="btn-continue">Continue Shopping</a>
+      <button (click)="continueShopping()" class="btn-continue" type="button">Continue Shopping</button>
     </div>
   </div>
 </div>

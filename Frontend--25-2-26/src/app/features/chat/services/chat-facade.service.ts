@@ -19,33 +19,59 @@ export class ChatFacadeService {
         private socket: ChatSocketService
     ) { }
 
-    async init(token?: string) {
-        // from api service
-        const convRes = await this.api.createOrGetConversation().toPromise();
-        const conv = convRes!.data.conv;
-        this.conversation$.next(conv);
-        this.socket.connect(token);
-        this.socket.joinConversation(conv._id);
+    private initializing = false;
+    private initialized = false;
+    private msgSub?: any;
 
-        this.unreadSubject.next(conv.unreadCountCustomer || 0);
+    async init(token?: string, force = false) {
+        if (force) this.reset();
+        if ((this.initialized && !force) || this.initializing) return;
+        this.initializing = true;
 
-        // const msgRes = await this.api.getMessage(conv._id).toPromise();
-        // const msg = msgRes!.data.messages || [];
-        // this.messageSubject.next(msg);
-        // Clear previous messages and load fresh
-        this.messageSubject.next([]);
-        await this.loadMore();
+        try {
+            const convRes = await this.api.createOrGetConversation().toPromise();
+            if (!convRes?.data?.conv) return;
+            
+            const conv = convRes.data.conv;
+            this.conversation$.next(conv);
+            this.socket.connect(token);
+            this.socket.joinConversation(conv._id);
+            this.unreadSubject.next(conv.unreadCountCustomer || 0);
 
-        this.socket.onNewMessage().subscribe(({ message }) => {
-            const currentMsgs = this.messageSubject.value ?? [];
-            const exists = currentMsgs.some(m => m._id === message._id);
-            if (!exists) {
-                this.messageSubject.next([...currentMsgs, message]);
-                if (message.senderRole === 'admin') {
-                    this.unreadSubject.next(this.unreadSubject.value + 1);
+            this.messageSubject.next([]);
+            await this.loadMore();
+
+            if (this.msgSub) this.msgSub.unsubscribe();
+            this.msgSub = this.socket.onNewMessage().subscribe(({ message }) => {
+                const currentMsgs = this.messageSubject.value ?? [];
+                if (!currentMsgs.some(m => m._id === message._id)) {
+                    this.messageSubject.next([...currentMsgs, message]);
+                    if (message.senderRole === 'admin') {
+                        this.unreadSubject.next(this.unreadSubject.value + 1);
+                    }
                 }
-            }
-        });
+            });
+
+            this.initialized = true;
+        } catch (err) {
+            console.error('Chat init failed:', err);
+            this.initialized = false;
+        } finally {
+            this.initializing = false;
+        }
+    }
+
+    reset() {
+        this.initialized = false;
+        this.initializing = false;
+        if (this.msgSub) {
+            this.msgSub.unsubscribe();
+            this.msgSub = undefined;
+        }
+        this.conversation$.next(null);
+        this.messageSubject.next([]);
+        this.unreadSubject.next(0);
+        this.socket.disconnect?.();
     }
 
     private loadingMore = false;

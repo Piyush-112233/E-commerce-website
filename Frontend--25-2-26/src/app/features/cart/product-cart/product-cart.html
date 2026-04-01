@@ -4,10 +4,7 @@
     <div *ngIf="product.discount > 0" class="discount-badge">
       -{{ getDiscountPercentage() }}%
     </div>
-    <button (click)="toggleWishlist()" 
-            [class.wishlisted]="isWishlisted" 
-            class="wishlist-btn"
-            type="button">
+    <button (click)="toggleWishlist()" [class.wishlisted]="isWishlisted" class="wishlist-btn" type="button">
       ♡
     </button>
   </div>
@@ -27,11 +24,8 @@
       <button (click)="quantity = quantity + 1" type="button" class="qty-btn">+</button>
     </div>
 
-    <button appAddToCart 
-            [appAddToCart]="product._id"
-            [quantity]="quantity"
-            class="btn-add-to-cart"
-            type="button">
+    <button appAddToCart [appAddToCart]="product._id" [product]="product" [quantity]="quantity" class="btn-add-to-cart"
+      type="button">
       Add to Cart
     </button>
   </div>

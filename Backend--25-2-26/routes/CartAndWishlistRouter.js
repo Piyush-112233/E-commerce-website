@@ -4,22 +4,17 @@ import { addToCart, getCart, updateCartItem, removeFromCart, clearCart, syncCart
 
 const cartAndWishlistRouter = express.Router();
 
-// All cart routes require authentication
-cartAndWishlistRouter.post("/add", isAuthVerifyJwt, addToCart);
-cartAndWishlistRouter.get("/get", isAuthVerifyJwt, getCart);
-cartAndWishlistRouter.put("/update", isAuthVerifyJwt, updateCartItem);
-cartAndWishlistRouter.delete("/remove", isAuthVerifyJwt, removeFromCart);
-cartAndWishlistRouter.delete("/clear", isAuthVerifyJwt, clearCart);
-cartAndWishlistRouter.post("/sync", isAuthVerifyJwt, syncCart);
+// Cart routes
+cartAndWishlistRouter.post("/cart/add", isAuthVerifyJwt, addToCart);
+cartAndWishlistRouter.get("/cart/get", isAuthVerifyJwt, getCart);
+cartAndWishlistRouter.put("/cart/update", isAuthVerifyJwt, updateCartItem);
+cartAndWishlistRouter.delete("/cart/remove", isAuthVerifyJwt, removeFromCart);
+cartAndWishlistRouter.delete("/cart/clear", isAuthVerifyJwt, clearCart);
+cartAndWishlistRouter.post("/cart/sync", isAuthVerifyJwt, syncCart);
 
+// Wishlist routes
+cartAndWishlistRouter.post("/wishlist/add", isAuthVerifyJwt, addToWishlist);
+cartAndWishlistRouter.get("/wishlist/get", isAuthVerifyJwt, getWishlist);
+cartAndWishlistRouter.delete("/wishlist/remove", isAuthVerifyJwt, removeFromWishList);
 
-
-// const wishListRouter = express.Router();
-
-// All wishlist routes require authentication
-cartAndWishlistRouter.post("/add", isAuthVerifyJwt, addToWishlist);
-cartAndWishlistRouter.get("/get", isAuthVerifyJwt, getWishlist);
-cartAndWishlistRouter.delete("/remove", isAuthVerifyJwt, removeFromWishList)
-
-// export { cartRouter, wishListRouter };
 export default cartAndWishlistRouter;

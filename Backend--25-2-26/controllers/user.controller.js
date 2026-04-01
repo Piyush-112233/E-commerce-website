@@ -553,6 +553,7 @@ const getUsers = async (req, res) => {
 }
 
 
+
 // cart
 
 // add item to cart
@@ -684,20 +685,25 @@ const updateCartItem = async (req, res) => {
 const removeFromCart = async (req, res) => {
     try {
         const { productId } = req.body;
+        // console.log("1", productId);
         const userId = req.user._id;
+        // console.log("2", userId)
 
         if (!productId) {
             return res.status(400).json(
                 new ApiError(400, "Product ID is required")
             );
         }
+        // console.log("3");
 
         const cart = await cartModel.findOne({ userId });
+        console.log(cart)
         if (!cart) {
             return res.status(404).json(
                 new ApiError(404, "Cart not found")
             );
         }
+        // console.log("4")
 
         cart.items = cart.items.filter((item) => item.productId.toString() !== productId);
 

@@ -1,20 +1,117 @@
-<div class="home-content">
-    <h1>Welcome to the Home Screen</h1>
+<!-- ====== TOP NAVBAR ====== -->
+<header class="hp-navbar">
+  <div class="hp-navbar-brand">
+    <span class="hp-brand-icon">🛍️</span>
+    <span class="hp-brand-name">Masters Shop</span>
+  </div>
+
+  <nav class="hp-navbar-actions">
+    <!-- Drawer toggle buttons -->
+    <button type="button" class="hp-nav-tab" [class.active]="activeDrawer === 'products'"
+      (click)="openDrawer('products')" id="nav-products-tab">
+      <span class="material-icons">grid_view</span>
+      Products
+    </button>
+
+    <button type="button" class="hp-nav-tab" [class.active]="activeDrawer === 'cart'" (click)="openDrawer('cart')"
+      id="nav-cart-tab">
+      <span class="material-icons">shopping_cart</span>
+      Cart
+      @if (cartCount > 0) {
+      <span class="hp-cart-badge">{{ cartCount }}</span>
+      }
+    </button>
+
+    <!-- User welcome & Logout -->
+    @if (currentUser) {
+    <span class="hp-user-greeting">Hi, {{ currentUser.name || currentUser.email }}</span>
+    }
+    <button type="button" class="hp-logout-btn" (click)="logout()" id="logout-btn">
+      <span class="material-icons">logout</span>
+      Logout
+    </button>
+  </nav>
+</header>
+
+<!-- ====== MAIN LAYOUT: Sidebar + Content ====== -->
+<div class="hp-layout">
+
+  <!-- PRODUCTS DRAWER -->
+  <aside class="hp-drawer" [class.open]="activeDrawer === 'products'" id="products-drawer">
+    <div class="hp-drawer-header">
+      <h2>Products</h2>
+      @if (!loadingCategories) {
+      <span class="hp-drawer-meta">{{ filteredProducts.length }} shown</span>
+      }
+    </div>
+
+    <!-- Category chips -->
+    @if (loadingCategories) {
+    <p class="hp-muted">Loading categories…</p>
+    } @else {
+    <div class="hp-category-chips" role="list">
+      <button type="button" class="hp-chip" [class.active]="selectedCategoryId === null"
+        (click)="selectCategory(null)">All</button>
+      @for (cat of categories; track cat._id) {
+      <button type="button" class="hp-chip" [class.active]="selectedCategoryId === cat._id"
+        (click)="selectCategory(cat._id)">{{ cat.name }}</button>
+      }
+    </div>
+    }
+
+    @if (error) {
+    <div class="hp-error-banner" role="alert">{{ error }}</div>
+    }
+
+    <!-- Products grid -->
+    @if (loadingProducts) {
+    <div class="hp-skeleton-grid">
+      @for (_ of skeletons; track $index) {
+      <div class="hp-skeleton-card">
+        <div class="hp-sk-img"></div>
+        <div class="hp-sk-line wide"></div>
+        <div class="hp-sk-line"></div>
+      </div>
+      }
+    </div>
+    } @else if (filteredProducts.length === 0) {
+    <p class="hp-empty">No products found.</p>
+    } @else {
+    <div class="hp-products-grid">
+      @for (prod of filteredProducts; track prod._id) {
+      <app-product-cart [product]="prod"></app-product-cart>
+      }
+    </div>
+    }
+  </aside>
+
+  <!-- CART DRAWER -->
+  <aside class="hp-drawer" [class.open]="activeDrawer === 'cart'" id="cart-drawer">
+    <div class="hp-drawer-header">
+      <h2>Your Cart</h2>
+      @if (cartCount > 0) {
+      <span class="hp-drawer-meta">{{ cartCount }} items</span>
+      }
+    </div>
+    <app-cart-summary (onContinue)="openDrawer('products')"></app-cart-summary>
+  </aside>
+
 </div>
 
-
-<!-- 1. The Floating Button -->
-<button class="chat-floating-btn" (click)="toggleChat()">
-    <span *ngIf="!isChatOpen">💬</span>
-    <span *ngIf="isChatOpen">✖</span>
-    <!-- The unread badge "like other website" -->
-    <span class="chat-unread-badge" *ngIf="!isChatOpen && unreadCount > 0">{{ unreadCount }}</span>
+<!-- ====== FLOATING CHAT BUTTON ====== -->
+<button class="chat-floating-btn" (click)="toggleChat()" type="button" aria-label="Toggle chat">
+  @if (!isChatOpen) {
+  <span class="material-icons" aria-hidden="true">chat</span>
+  } @else {
+  <span class="material-icons" aria-hidden="true">close</span>
+  }
+  @if (!isChatOpen && unreadCount > 0) {
+  <span class="chat-unread-badge">{{ unreadCount }}</span>
+  }
 </button>
 
-<!-- 2. The Floating Window (Changed to *ngIf) -->
 <div class="chat-floating-window" [style.display]="isChatOpen ? 'flex' : 'none'">
-
-    <!-- Your chat component -->
-    <app-chat-page-component *ngIf="hasOpenedChat" class="chat-wrapper"></app-chat-page-component>
-
+  @if (hasOpenedChat) {
+  <app-chat-page-component class="chat-wrapper"></app-chat-page-component>
+  }
 </div>

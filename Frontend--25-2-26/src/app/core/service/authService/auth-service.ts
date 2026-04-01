@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { jwtDecode } from 'jwt-decode';
 import { catchError, map, Observable, of, ReplaySubject, tap } from 'rxjs';
+import { Router } from '@angular/router';
 
 export type Role = 'admin' | 'user' | 'customer';
 
@@ -24,7 +25,7 @@ interface ApiResponse<T> {
 
 
 export class AuthService {
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private router: Router) { }
   // get api of signup
   getRegisterDetails(name: string, email: string, password: string, role: string) {
     const url = "http://localhost:3000/api/users/signup"
@@ -130,6 +131,26 @@ export class AuthService {
   isAuthenticated(): boolean {
     const token = localStorage.getItem('accessToken'); // or however you store your token
     return !!token;
+  }
+
+  // Logout: call backend, clear token & state, navigate to login
+  logout(): Observable<any> {
+    return this.http.post('http://localhost:3000/api/users/logout', {}, { withCredentials: true }).pipe(
+      tap(() => {
+        localStorage.removeItem('accessToken');
+        this.clearMe();
+        this.loaded = false;
+        this.router.navigateByUrl('/auth/login');
+      }),
+      catchError((err) => {
+        // Even if API fails, clear local state
+        localStorage.removeItem('accessToken');
+        this.clearMe();
+        this.loaded = false;
+        this.router.navigateByUrl('/auth/login');
+        return of(null);
+      })
+    );
   }
 }
 
