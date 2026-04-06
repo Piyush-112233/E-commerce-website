@@ -95,7 +95,7 @@ export const conversationById = async (req, res) => {
  * GET /api/conversations/:id/messages?limit=30&before=ISO_DATE
  */
 export const MessageforConversation = async (req, res) => {
-    console.log(req.query.limit);
+    // console.log(req.query.limit);
     try {
         const { id } = req.params;
 

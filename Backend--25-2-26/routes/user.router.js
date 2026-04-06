@@ -1,5 +1,5 @@
 import express from "express";
-import { auth, changeCurrentPassword, forgetPassword, getUserProfile, loginUser, logoutUser, RefreshAccessToken, resetPassword, signUpUser, updateAccountDetails, verifyEmail } from "../controllers/user.controller.js";
+import { auth, changeCurrentPassword, forgetPassword, getCurrentUser, getUserProfile, loginUser, logoutUser, RefreshAccessToken, resetPassword, signUpUser, updateAccountDetails, verifyEmail } from "../controllers/user.controller.js";
 import isAuthVerifyJwt from "../middlewares/isAuth.middleware.js";
 
 let userRouter = express.Router();
@@ -16,6 +16,8 @@ userRouter.patch('/changePassword', isAuthVerifyJwt, changeCurrentPassword);
 userRouter.patch('/updateDetails', isAuthVerifyJwt, updateAccountDetails);
 
 userRouter.get('/profile', isAuthVerifyJwt, getUserProfile);
+
+userRouter.get('/currentuser', isAuthVerifyJwt, getCurrentUser);
 
 userRouter.get('/me', isAuthVerifyJwt, auth)
 export default userRouter;

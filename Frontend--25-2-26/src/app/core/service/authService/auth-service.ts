@@ -68,6 +68,11 @@ export class AuthService {
       { withCredentials: true })
   }
 
+  getCurrentUser(){
+    const url = `http://localhost:3000/api/currentuser`
+    return this.http.get(url,{})
+  }
+
 
   // getToken() {
   //   return localStorage.getItem('accessToken');

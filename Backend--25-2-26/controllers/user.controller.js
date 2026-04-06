@@ -8,6 +8,13 @@ import ProductModel from "../model/product.model.js";
 import cartModel from "../model/cart.model.js";
 import WishListModel from "../model/wishList.model.js";
 
+const isProd = process.env.NODE_ENV === "production";
+const authCookieOptions = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+};
+
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
         // find user by id
@@ -204,15 +211,8 @@ const loginUser = async (req, res) => {
         const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
         const loggedInUser = await UserModel.findById(user._id).select(" -password -refreshToken ")
 
-        res.cookie('accessToken', accessToken, {
-            httpOnly: true,
-            sameSite: 'none',
-            secure: true
-        }).cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            sameSite: 'none',
-            secure: true
-        })
+        res.cookie("accessToken", accessToken, authCookieOptions)
+            .cookie("refreshToken", refreshToken, authCookieOptions)
 
         return res.status(201).json(
             new ApiResponse(200,
@@ -368,14 +368,10 @@ const logoutUser = async (req, res) => {
         )
 
         res.clearCookie("accessToken", {
-            httpOnly: true,
-            sameSite: 'none',
-            secure: true
+            ...authCookieOptions,
         }).clearCookie("refreshToken", {
-            httpOnly: true,
-            sameSite: 'none',
-            secure: true
-        })
+            ...authCookieOptions,
+        });
 
         return res.status(201).json(
             new ApiResponse(200,
@@ -409,17 +405,10 @@ const RefreshAccessToken = async (req, res) => {
             new ApiError(401, "Refresh Token is Expired or used")
         }
 
-        const { accessToken, newRefreshToken } = await generateAccessAndRefreshTokens(user._id)
+        const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshTokens(user._id)
 
-        res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            sameSite: 'none',
-            secure: true
-        }).cookie("refreshToken", newRefreshToken, {
-            httpOnly: true,
-            sameSite: 'none',
-            secure: true
-        });
+        res.cookie("accessToken", accessToken, authCookieOptions)
+            .cookie("refreshToken", newRefreshToken, authCookieOptions);
 
         return res.status(201).json(
             new ApiResponse(200,
@@ -500,6 +489,26 @@ const getUserProfile = async (req, res) => {
         console.log("PROFILE ERROR:", error);
         return res.status(501).json(
             new ApiError(500, `Server Error ${error}`)
+        );
+    }
+}
+
+const getCurrentUser = async (req, res) => {
+    try {
+        const user = await UserModel.findById(req.user._id).select('-password -refreshToken');
+
+        if (!user) {
+            return res.status(404).json(
+                new ApiError(404, "User not found")
+            );
+        }
+        return res.status(200).json(
+            new ApiResponse(200, user, "Current user fetched successfully")
+        );
+    } catch (error) {
+        console.log("GETCURRENTUSER ERROR:", error);
+        return res.status(500).json(
+            new ApiError(500, `Server Error: ${error.message}`)
         );
     }
 }
@@ -895,4 +904,5 @@ const removeFromWishList = async (req, res) => {
         );
     }
 }
-export { signUpUser, verifyEmail, loginUser, forgetPassword, resetPassword, logoutUser, RefreshAccessToken, changeCurrentPassword, updateAccountDetails, getUserProfile, auth, getUsers, addToCart, getCart, updateCartItem, removeFromCart, clearCart, syncCart, addToWishlist, getWishlist, removeFromWishList }
+
+export { signUpUser, verifyEmail, loginUser, forgetPassword, resetPassword, logoutUser, RefreshAccessToken, changeCurrentPassword, updateAccountDetails, getUserProfile, getCurrentUser, auth, getUsers, addToCart, getCart, updateCartItem, removeFromCart, clearCart, syncCart, addToWishlist, getWishlist, removeFromWishList }

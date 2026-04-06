@@ -67,7 +67,7 @@ export class HomePages implements OnInit, OnDestroy {
       })
     );
 
-    // Cart count (reactive — updates whenever items are added)
+    // Cart count - updates whenever items are added
     this.sub.add(
       this.cartService.cartCount$.subscribe(count => {
         this.cartCount = count;
@@ -79,7 +79,7 @@ export class HomePages implements OnInit, OnDestroy {
       this.cartService.getCart(true).subscribe({
         next: (res: any) => {
           if (res?.data) {
-            this.cartService.updateCart(res.data);
+            this.cartService.updateCartItems(res.data);
           }
         },
         error: () => { } // silent fail

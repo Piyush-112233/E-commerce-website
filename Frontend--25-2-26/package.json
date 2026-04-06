@@ -32,6 +32,8 @@
     "@angular/material": "~21.2.3",
     "@angular/platform-browser": "^21.1.0",
     "@angular/router": "^21.1.0",
+    "@types/jquery": "^4.0.0",
+    "jquery": "^4.0.0",
     "jwt-decode": "^4.0.0",
     "rxjs": "~7.8.0",
     "socket.io-client": "^4.8.3",

@@ -43,6 +43,7 @@ export class AddToCartDirective implements OnInit {
         btn.disabled = false;
         btn.textContent = 'Add to Cart';
         this.quantity = 1;
+        
       },
       error: (error: any) => {
         console.error('Error adding to cart:', error);

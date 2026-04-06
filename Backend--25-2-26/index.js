@@ -31,17 +31,19 @@ import adminRouter from "./routes/admin.router.js";
 import chatRouter from "./routes/chatRouter.js";
 import { setupSocketIO } from "./socket.io/server.js";
 import cartAndWishlistRouter from "./routes/CartAndWishlistRouter.js";
+import paymentRouter from "./routes/payment.router.js";
 
 
 //route declaration
 app.use(morgan('dev'))
+app.use(passport.initialize());
 app.use('/api/users', userRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api', currentUserRouter);
 app.use('/auth', googleRouter);
-app.use(passport.initialize());
 app.use('/api', chatRouter)
 app.use('/api', cartAndWishlistRouter);
+app.use('/api/payment', paymentRouter);
 // app.use('/api/wishlist', wishListRouter);
 
 // Create a single HTTP server for both Express and Socket.IO

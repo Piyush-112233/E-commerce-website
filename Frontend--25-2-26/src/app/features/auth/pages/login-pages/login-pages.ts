@@ -54,7 +54,7 @@ export class LoginPages {
           next: (me) => {
             if (me?.role === 'admin') this.router.navigateByUrl('/admin');
             else this.router.navigateByUrl('/');
-            console.log('Me',me);
+            console.log('Me', me);
           },
           error: () => this.router.navigateByUrl('/auth/login')
         });

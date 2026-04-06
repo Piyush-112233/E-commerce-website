@@ -1,61 +1,124 @@
-<div class="cart-container">
-  <h2>Shopping Cart <span *ngIf="cartCount > 0">({{ cartCount }} items)</span></h2>
-
-  <div *ngIf="loading" class="loading">
-    <p>Loading cart...</p>
+<div class="cart-summary">
+  <!-- Error Message -->
+  <div *ngIf="paymentError" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>Error!</strong> {{ paymentError }}
+    <button type="button" class="btn-close" (click)="paymentError = ''"></button>
   </div>
 
-  <div *ngIf="!loading && (!cart || cart.items.length === 0)" class="empty-cart">
-    <p>Your cart is empty</p>
-    <button (click)="continueShopping()" class="btn-continue-shopping" type="button">Continue Shopping</button>
+  <!-- Success Message -->
+  <div *ngIf="paymentSuccess" class="alert alert-success alert-dismissible fade show" role="alert">
+    <strong>Success!</strong> Payment completed successfully. Redirecting...
+    <button type="button" class="btn-close" (click)="paymentSuccess = false"></button>
   </div>
 
-  <div *ngIf="!loading && cart && cart.items.length > 0" class="cart-content">
+  <!-- Loading State -->
+  <div *ngIf="loading || paymentLoading" class="d-flex justify-content-center align-items-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <span class="ms-2">{{ paymentLoading ? 'Processing payment...' : 'Loading cart...' }}</span>
+  </div>
+
+  <!-- Cart Items -->
+  <div *ngIf="!loading && cart && cart.items && cart.items.length > 0">
     <div class="cart-items">
-      <div *ngFor="let item of cart.items" class="cart-item">
-        <div class="item-details">
-          <h4>{{ getProductName(item) }}</h4>
-          <p class="price">₹{{ getDiscountedPrice(item).toFixed(2) }}</p>
-        </div>
-
-        <div class="item-quantity">
-          <button (click)="updateQuantity(getProductId(item), item.quantity - 1)" type="button"
-            class="qty-btn">-</button>
-          <input type="number" [value]="item.quantity"
-            (change)="updateQuantity(getProductId(item), $any($event.target).value)" min="1" class="qty-input">
-          <button (click)="updateQuantity(getProductId(item), item.quantity + 1)" type="button"
-            class="qty-btn">+</button>
-        </div>
-
-        <div class="item-total">
-          <p>₹{{ getItemTotal(item).toFixed(2) }}</p>
-        </div>
-
-        <button (click)="removeItem(getProductId(item))" class="btn-remove" type="button">Remove</button>
-      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Discount</th>
+            <th>Total</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of cart.items">
+            <td>{{ getProductName(item) }}</td>
+            <td>₹{{ item.price.toFixed(2) }}</td>
+            <td>
+              <input 
+                type="number" 
+                min="1" 
+                [value]="item.quantity"
+                (change)="updateQuantity(getProductId(item), ($event.target.value))"
+                class="form-control form-control-sm"
+                style="width: 60px;"
+              />
+            </td>
+            <td *ngIf="item.discount">-₹{{ (item.discount * item.quantity).toFixed(2) }}</td>
+            <td *ngIf="!item.discount">-</td>
+            <td>₹{{ getItemTotal(item).toFixed(2) }}</td>
+            <td>
+              <button 
+                (click)="removeItem(getProductId(item))"
+                class="btn btn-sm btn-danger"
+              >
+                Remove
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <div class="cart-summary">
-      <h3>Order Summary</h3>
-
+    <!-- Cart Summary -->
+    <div class="cart-summary-section">
       <div class="summary-row">
         <span>Subtotal:</span>
-        <span>₹{{ cart.totalPrice.toFixed(2) }}</span>
+        <span>₹{{ (cart.totalPrice || 0).toFixed(2) }}</span>
       </div>
-
-      <div class="summary-row" *ngIf="cart.totalDiscount > 0">
+      <div class="summary-row">
         <span>Discount:</span>
-        <span class="discount">-₹{{ cart.totalDiscount.toFixed(2) }}</span>
+        <span>-₹{{ (cart.totalDiscount || 0).toFixed(2) }}</span>
       </div>
-
       <div class="summary-row total">
-        <span>Total:</span>
-        <span>₹{{ getCartTotal().toFixed(2) }}</span>
+        <strong>Total:</strong>
+        <strong>₹{{ getCartTotal().toFixed(2) }}</strong>
       </div>
-
-      <button routerLink="/checkout" class="btn-checkout" type="button">Proceed to Checkout</button>
-      <button (click)="clearCart()" class="btn-clear" type="button">Clear Cart</button>
-      <button (click)="continueShopping()" class="btn-continue" type="button">Continue Shopping</button>
     </div>
+
+    <!-- Checkout Buttons -->
+    <div class="checkout-actions">
+      <button 
+        (click)="onCheckout()"
+        [disabled]="paymentLoading || !isAuthenticated"
+        class="btn btn-primary btn-lg"
+      >
+        <span *ngIf="!paymentLoading">Proceed to Payment</span>
+        <span *ngIf="paymentLoading">
+          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          Processing...
+        </span>
+      </button>
+
+      <button 
+        (click)="continueShopping()"
+        class="btn btn-secondary btn-lg"
+      >
+        Continue Shopping
+      </button>
+
+      <button 
+        (click)="clearCart()"
+        class="btn btn-outline-danger btn-lg"
+      >
+        Clear Cart
+      </button>
+    </div>
+
+    <!-- Login Reminder -->
+    <div *ngIf="!isAuthenticated" class="alert alert-info mt-3">
+      <strong>Note:</strong> Please <a routerLink="/login">log in</a> to proceed with checkout.
+    </div>
+  </div>
+
+  <!-- Empty Cart -->
+  <div *ngIf="!loading && (!cart || !cart.items || cart.items.length === 0)" class="empty-cart">
+    <p>Your cart is empty</p>
+    <button (click)="continueShopping()" class="btn btn-primary">
+      Start Shopping
+    </button>
   </div>
 </div>

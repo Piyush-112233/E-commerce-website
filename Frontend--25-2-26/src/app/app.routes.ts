@@ -20,5 +20,10 @@ export const routes: Routes = [
     canMatch: [userAreaGuard],
     loadChildren: () => import('./features/home/home.routes').then((m) => m.homeRoutes),
   },
+  // {
+  //   path: '',
+  //   canMatch: [userAreaGuard],
+  //   loadChildren: () => import('./features/cart/cart.routes').then((m) => m.cartRoutes),
+  // },
   { path: '**', redirectTo: '' },
 ];
