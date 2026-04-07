@@ -64,6 +64,18 @@ export class HomePages implements OnInit, OnDestroy {
     this.sub.add(
       this.authService.$me.subscribe(me => {
         this.currentUser = me;
+
+        // If user is authenticated, load the server cart
+        if (me) {
+          this.cartService.getCart(true).subscribe({
+            next: (res: any) => {
+              if (res?.data) {
+                this.cartService.updateCartItems(res.data);
+              }
+            },
+            error: () => { } // silent fail
+          });
+        }
       })
     );
 
@@ -73,18 +85,6 @@ export class HomePages implements OnInit, OnDestroy {
         this.cartCount = count;
       })
     );
-
-    // If user is authenticated, load the server cart count
-    if (this.authService.isAuthenticated()) {
-      this.cartService.getCart(true).subscribe({
-        next: (res: any) => {
-          if (res?.data) {
-            this.cartService.updateCartItems(res.data);
-          }
-        },
-        error: () => { } // silent fail
-      });
-    }
 
     this.fetchCategories();
     this.fetchProducts();
@@ -105,6 +105,17 @@ export class HomePages implements OnInit, OnDestroy {
 
   openDrawer(drawer: 'products' | 'cart') {
     this.activeDrawer = drawer;
+
+    // Refresh cart data whenever opening the cart drawer
+    if (drawer === 'cart' && this.currentUser) {
+      this.cartService.getCart(true).subscribe({
+        next: (res: any) => {
+          if (res?.data) {
+            this.cartService.updateCartItems(res.data);
+          }
+        }
+      });
+    }
   }
 
   logout() {

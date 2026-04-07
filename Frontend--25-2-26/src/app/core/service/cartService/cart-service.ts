@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, of, tap } from 'rxjs';
 
 export interface CartItem {
   productId: string;
@@ -78,18 +78,17 @@ export class CartService {
 
   // Add to cart (handles both authenticated and non-authenticated users)
   addToCart(productId: string, quantity: number = 1, isAuthenticated: boolean, product?: any): Observable<any> {
-    // console.log("------1");
+    console.log("Checking Auth Status...", isAuthenticated);
     if (isAuthenticated) {
       return this.http.post(`${this.cartUrl}/add`, { productId, quantity }).pipe(
         tap((response: any) => {
           const cart = response?.data?.cart ?? response?.cart ?? response?.data;
           if (cart && Array.isArray(cart.items) && typeof cart.totalQuantity === 'number') {
             this.updateCartItems(cart);
-            return;
+          } else {
+            // Fallback for APIs that don't return the full cart object.
+            this.cartCountSubject.next(this.cartCountSubject.getValue() + quantity);
           }
-
-          // Fallback for APIs that don't return the full cart object.
-          this.cartCountSubject.next(this.cartCountSubject.getValue() + quantity);
         })
       );
     } else {
@@ -112,10 +111,7 @@ export class CartService {
       }
       this.saveLocalCart(localCart);
       this.updateCartItemsCount();
-      return new Observable(observer => {
-        observer.next({ success: true, message: 'Added to cart (local)' });
-        observer.complete();
-      });
+      return of({ success: true, message: 'Added to cart (local)' });
     }
   }
 
@@ -124,13 +120,9 @@ export class CartService {
     if (isAuthenticated) {
       return this.http.get(`${this.cartUrl}/get`);
     } else {
-      return new Observable(observer => {
-        observer.next({ data: { items: this.getLocalCart() } });
-        observer.complete();
-      })
+      return of({ data: { items: this.getLocalCart() } });
     }
   }
-
 
   // Update cart item
   updateCartItemsItem(productId: string, quantity: number, isAuthenticated: boolean): Observable<any> {
@@ -150,31 +142,23 @@ export class CartService {
           this.updateCartItemsCount();
         }
       }
-      return new Observable(observer => {
-        observer.next({ success: true });
-        observer.complete();
-      });
+      return of({ success: true });
     }
   }
-
 
   // remove from cart
   removeFromCart(productId: string, isAuthenticated: boolean): Observable<any> {
     if (isAuthenticated) {
-      return this.http.delete(`${this.cartUrl}/remove`, { body: { productId } })
+      return this.http.delete(`${this.cartUrl}/remove`, { body: { productId } });
     } else {
       let localCart = this.getLocalCart();
       // console.log("------6", localCart);
       localCart = localCart.filter(item => item.productId !== productId);
       this.saveLocalCart(localCart);
       this.updateCartItemsCount();
-      return new Observable(observer => {
-        observer.next({ success: true });
-        observer.complete();
-      });
+      return of({ success: true });
     }
   }
-
 
   // clear cart
   clearCart(isAuthenticated: boolean): Observable<any> {
@@ -183,10 +167,7 @@ export class CartService {
     } else {
       this.saveLocalCart([]);
       this.updateCartItemsCount();
-      return new Observable(observer => {
-        observer.next({ success: true });
-        observer.complete();
-      });
+      return of({ success: true });
     }
   }
 
@@ -195,15 +176,11 @@ export class CartService {
   sync(isAuthenticated: boolean): Observable<any> {
     if (isAuthenticated) {
       const localCart = this.getLocalCart();
-      // console.log("------7", localCart);
       if (localCart.length > 0) {
         return this.http.post(`${this.cartUrl}/sync`, { localCart });
       }
     }
-    return new Observable(observer => {
-      observer.next({ success: true });
-      observer.complete();
-    });
+    return of({ success: true });
   }
 
   // Sync local cart to DB then clear local storage (call after login)
@@ -211,24 +188,14 @@ export class CartService {
     const localCart = this.getLocalCart();
     // console.log("------8");
     if (localCart.length > 0) {
-      return new Observable(observer => {
-        this.http.post(`${this.cartUrl}/sync`, { localCart }, { withCredentials: true }).subscribe({
-          next: (res) => {
-            this.saveLocalCart([]);
-            this.cartCountSubject.next(0);
-            observer.next(res);
-            observer.complete();
-          },
-          error: (err) => {
-            observer.error(err);
-          }
-        });
-      });
+      return this.http.post(`${this.cartUrl}/sync`, { localCart }).pipe(
+        tap(() => {
+          this.saveLocalCart([]);
+          this.cartCountSubject.next(0);
+        })
+      );
     }
-    return new Observable(observer => {
-      observer.next({ success: true, message: 'No local cart to sync' });
-      observer.complete();
-    });
+    return of({ success: true, message: 'No local cart to sync' });
   }
 
   // Get raw local cart items (for display when not authenticated)

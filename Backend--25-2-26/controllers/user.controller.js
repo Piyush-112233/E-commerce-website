@@ -13,26 +13,38 @@ const authCookieOptions = {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
+    maxAge: 1 * 60 * 1000,
 };
 
+const refreshAuthCookieOptions = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 7 * 24  * 60 * 1000,
+};
+
+
+
 const generateAccessAndRefreshTokens = async (userId) => {
-    try {
-        // find user by id
-        const user = await UserModel.findById(userId)
-        // generate token
-        const accessToken = user.generateAccessToken()
-        const refreshToken = user.generateRefreshToken()
-
-        // database me save
-        user.refreshToken = refreshToken
-        await user.save({ validateBeforeSave: false })
-
-        // generate
-        return { accessToken, refreshToken }
-
-    } catch (error) {
-        return new ApiError(400, "Wrong while generating Access and Refresh Token")
+    // find user by id
+    const user = await UserModel.findById(userId);
+    if (!user) {
+        throw new ApiError(404, "User not found");
     }
+
+    // generate tokens
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    if (typeof accessToken !== "string" || typeof refreshToken !== "string") {
+        throw new ApiError(500, "Error while generating access/refresh token");
+    }
+
+    // save refresh token in DB
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    return { accessToken, refreshToken };
 }
 
 const signUpUser = async (req, res) => {
@@ -73,7 +85,7 @@ const signUpUser = async (req, res) => {
             .createHash("sha256")
             .update(rawToken)
             .digest("hex");
-        const expireVerification = Number(10)
+        const expireVerification = Number(15)
 
 
         newUser.emailVerificationToken = hashedToken;
@@ -181,38 +193,39 @@ const verifyEmail = async (req, res) => {
 const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
-        if (!email) {
-            return res.status(401).json(
-                console.log(new ApiError(400, "Email is Required"))
-            )
+
+        if (!email || !password) {
+            return res.status(400).json(
+                new ApiError(400, "Email and password are required")
+            );
         }
-        // console.log("-----1");
+
+        // const normalizedEmail = String(email).trim().toLowerCase();
         const user = await UserModel.findOne({ email })
         if (!user) {
             return res.status(401).json(
-                console.log(new ApiError(400, "User don't Exist .Please signUp !!"))
+                new ApiError(401, "User doesn't exist. Please sign up.")
             )
         }
-        // console.log("-----2");
+
         if (!user.emailVerified) {
             return res.status(401).json(
-                console.log(new ApiError(400, { message: "Please verify your email first" }))
+                new ApiError(401, "Please verify your email first")
             );
         }
-        // console.log("-----3");
+
         const isMatch = await user.isCorrectPassword(password);
         if (!isMatch) {
             return res.status(400).json(
-                console.log(new ApiError(400, "Invalid Email or Password"))
+                new ApiError(400, "Invalid email or password")
             )
         }
-        // console.log("-----4");
 
         const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
         const loggedInUser = await UserModel.findById(user._id).select(" -password -refreshToken ")
 
         res.cookie("accessToken", accessToken, authCookieOptions)
-            .cookie("refreshToken", refreshToken, authCookieOptions)
+            .cookie("refreshToken", refreshToken, refreshAuthCookieOptions)
 
         return res.status(201).json(
             new ApiResponse(200,
@@ -391,18 +404,24 @@ const RefreshAccessToken = async (req, res) => {
         const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
         if (!incomingRefreshToken) {
-            new ApiError(400, "Unauthorized Request");
+            return res.status(401).json(
+                new ApiError(401, "Unauthorized request")
+            );
         }
 
         const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
         const user = await UserModel.findById(decodedToken?._id)
 
         if (!user) {
-            new ApiError(401, "Invalid Refresh Token")
+            return res.status(401).json(
+                new ApiError(401, "Invalid refresh token")
+            );
         }
 
         if (incomingRefreshToken !== user?.refreshToken) {
-            new ApiError(401, "Refresh Token is Expired or used")
+            return res.status(401).json(
+                new ApiError(401, "Refresh token is expired or already used")
+            );
         }
 
         const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshTokens(user._id)
@@ -611,7 +630,7 @@ const addToCart = async (req, res) => {
         }
 
         await cart.save();
-
+        console.log(cart);
         return res.status(201).json(
             new ApiResponse(
                 200,

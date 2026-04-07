@@ -36,7 +36,9 @@ const orderSchema = new mongoose.Schema({
     },
     expireAt: {
         type: Date,
-        required: true
+        required: function () {
+            return this.status === 'Pending';
+        }
     }
 }, { timestamps: true });
 

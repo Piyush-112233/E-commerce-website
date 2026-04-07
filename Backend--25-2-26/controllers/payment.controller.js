@@ -13,6 +13,10 @@ import { ApiError } from "../validators/ApiError.js";
 export const createOrder = async (req, res) => {
     try {
         const userId = req.user._id; // From auth middleware
+        const configuredExpiryMinutes = Number(process.env.ORDER_EXPIRY_MINUTES);
+        const orderExpiryMinutes = Number.isFinite(configuredExpiryMinutes) && configuredExpiryMinutes > 0
+            ? configuredExpiryMinutes
+            : 30;
 
         // get user's cart from DB
         const cart = await cartModel.findOne({ userId }).populate('items.productId');
@@ -53,7 +57,7 @@ export const createOrder = async (req, res) => {
             totalDiscount: cart.totalDiscount,
             razorpayOrderId: razorpayOrder.id,
             status: 'Pending',
-            expireAt: new Date(Date.now() + 30 * 60 * 1000)  // 30 mins expiry
+            expireAt: new Date(Date.now() + orderExpiryMinutes * 60 * 1000)
         })
 
         await order.save();
@@ -161,6 +165,7 @@ export const verifypayment = async (req, res) => {
 
         // Update order status to paid
         order.status = 'Paid'
+        order.expireAt = undefined;
 
         await Promise.all([
             payment.save(),

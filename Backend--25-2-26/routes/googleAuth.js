@@ -9,6 +9,14 @@ const authCookieOptions = {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
+    maxAge: 1 * 60 * 1000,
+};
+
+const refreshAuthCookieOptions = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 7 * 24  * 60 * 1000,
 };
 
 // redirect to google
@@ -39,7 +47,7 @@ googleRouter.get("/google/callback",
                 // console.log("------1",job.data)
 
             res.cookie("accessToken", accessToken, authCookieOptions);
-            res.cookie("refreshToken", refreshToken, authCookieOptions);
+            res.cookie("refreshToken", refreshToken, refreshAuthCookieOptions);
 
             // redirect to frontend with token
             res.redirect(`http://localhost:4200/home-success?token=${accessToken}`)

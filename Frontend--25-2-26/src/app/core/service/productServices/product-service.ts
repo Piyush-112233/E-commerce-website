@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { publicApiContext } from '../../http/auth-http-context';
 
 @Injectable({
   providedIn: 'root',
@@ -11,7 +12,7 @@ export class ProductService {
   //get all products
   getProducts() {
     const url = "http://localhost:3000/api/admin/product/getAll"
-    return this.http.get(url, {})
+    return this.http.get(url, { context: publicApiContext() })
   }
 
   getCategories() {

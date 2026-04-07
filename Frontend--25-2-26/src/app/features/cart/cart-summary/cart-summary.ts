@@ -36,7 +36,15 @@ export class CartSummary implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.isAuthenticated = this.authService.isAuthenticated();
+    // 🛡️ REQUISITE: Subscribe to the auth status to handle page refreshes accurately.
+    // Instead of checking once, we react whenever the session check (loadMe) completes.
+    this.authService.$me.subscribe(user => {
+      this.isAuthenticated = !!user;
+      console.log("CartSummary Auth Status Updated:", this.isAuthenticated);
+
+      this.getUserDetails();
+      this.loadCart();
+    });
 
     this.cartService.cart$.subscribe((cart: Cart | null) => {
       this.cart = cart;
@@ -54,9 +62,6 @@ export class CartSummary implements OnInit {
     this.paymentService.getPaymentError().subscribe((error) => {
       this.handlePaymentError(error);
     });
-
-    this.getUserDetails();
-    this.loadCart();
   }
 
 
@@ -86,7 +91,7 @@ export class CartSummary implements OnInit {
         if (response.data) {
           this.cartService.updateCartItems(response.data);
           this.cart = response.data;
-          // console.log(this.cart);
+          console.log(this.cart);
         } else {
           this.cart = null;
           // console.log(this.cart);
@@ -280,7 +285,7 @@ export class CartSummary implements OnInit {
     if (response.success && response.verified) {
       this.paymentSuccess = true;
       this.paymentError = '';
-      
+
       // Clear cart items in the UI immediately
       this.cart = null;
 
