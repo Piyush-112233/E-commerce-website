@@ -9,6 +9,7 @@ import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-cart-summary',
+  standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './cart-summary.html',
   styleUrl: './cart-summary.css',

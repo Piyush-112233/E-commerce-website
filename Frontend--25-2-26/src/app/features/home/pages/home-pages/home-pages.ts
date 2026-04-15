@@ -7,10 +7,11 @@ import { CartSummary } from '../../../cart/cart-summary/cart-summary';
 import { ProductService } from '../../../../core/service/productServices/product-service';
 import { AuthService, MeResponse } from '../../../../core/service/authService/auth-service';
 import { CartService } from '../../../../core/service/cartService/cart-service';
+import { AiChatPage } from '../../../chat/pages/ai-chat-page/ai-chat-page';
 
 @Component({
   selector: 'app-home-pages',
-  imports: [ChatPageComponent, ProductCart, CartSummary],
+  imports: [ChatPageComponent, ProductCart, CartSummary, AiChatPage],
   templateUrl: './home-pages.html',
   styleUrl: './home-pages.css',
 })
@@ -24,7 +25,7 @@ export class HomePages implements OnInit, OnDestroy {
   error: string | null = null;
 
   // Drawer state: 'products' | 'cart'
-  activeDrawer: 'products' | 'cart' = 'products';
+  activeDrawer: 'products' | 'cart' | 'ai-chat' = 'products';
 
   // Cart count badge
   cartCount = 0;
@@ -103,7 +104,7 @@ export class HomePages implements OnInit, OnDestroy {
     this.selectedCategoryId = id;
   }
 
-  openDrawer(drawer: 'products' | 'cart') {
+  openDrawer(drawer: 'products' | 'cart' | 'ai-chat') {
     this.activeDrawer = drawer;
 
     // Refresh cart data whenever opening the cart drawer
@@ -116,11 +117,13 @@ export class HomePages implements OnInit, OnDestroy {
         }
       });
     }
+    // No extra logic needed for 'ai-chat' drawer
   }
 
   logout() {
     this.authService.logout().subscribe();
   }
+
 
   toggleChat() {
     this.isChatOpen = !this.isChatOpen;

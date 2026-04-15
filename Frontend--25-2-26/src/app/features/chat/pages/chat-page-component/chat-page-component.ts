@@ -1,4 +1,4 @@
-import { Component, NgZone, HostListener } from '@angular/core';
+import { Component, NgZone, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { ChatMessage } from '../../types/chat.types';
 import { Subscription } from 'rxjs';
 import { ChatFacadeService } from '../../services/chat-facade.service';
@@ -7,11 +7,12 @@ import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-chat-page-component',
+  standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './chat-page-component.html',
   styleUrl: './chat-page-component.css',
 })
-export class ChatPageComponent {
+export class ChatPageComponent implements OnInit, OnDestroy {
   messageText = '';
   messages: ChatMessage[] = [];
   selectedFile: File | null = null;

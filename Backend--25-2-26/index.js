@@ -3,6 +3,23 @@ import express from 'express';
 import connectDb from './config/db.js';
 import cors from 'cors'
 import http from 'http';
+import cookieParser from 'cookie-parser';
+import morgan from 'morgan';
+import passport from "passport";
+
+//router import
+import userRouter from './routes/user.router.js';
+import currentUserRouter from './routes/currentUser.router.js';
+import googleRouter from './routes/googleAuth.js';
+import adminRouter from "./routes/admin.router.js";
+import chatRouter from "./routes/chatRouter.js";
+import aiChatRouter from "./routes/aiChat.router.js";
+import cartAndWishlistRouter from "./routes/CartAndWishlistRouter.js";
+import paymentRouter from "./routes/payment.router.js";
+import { setupSocketIO } from "./socket.io/server.js";
+import { createVectorStore, createStreamingChain } from "./utils/ai.helpers.js";
+
+import './bullMq/worker.js/email.worker.js'
 
 const app = express();
 const PORT = process.env.PORT || 6000;
@@ -19,21 +36,6 @@ app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
 
-//router import
-import userRouter from './routes/user.router.js';
-import cookieParser from 'cookie-parser';
-import currentUserRouter from './routes/currentUser.router.js';
-import morgan from 'morgan';
-import googleRouter from './routes/googleAuth.js';
-import passport from "passport";
-import './bullMq/worker.js/email.worker.js'
-import adminRouter from "./routes/admin.router.js";
-import chatRouter from "./routes/chatRouter.js";
-import { setupSocketIO } from "./socket.io/server.js";
-import cartAndWishlistRouter from "./routes/CartAndWishlistRouter.js";
-import paymentRouter from "./routes/payment.router.js";
-
-
 //route declaration
 app.use(morgan('dev'))
 app.use(passport.initialize());
@@ -44,14 +46,27 @@ app.use('/auth', googleRouter);
 app.use('/api', chatRouter)
 app.use('/api', cartAndWishlistRouter);
 app.use('/api/payment', paymentRouter);
-// app.use('/api/wishlist', wishListRouter);
+app.use('/api/ai', aiChatRouter);
 
 // Create a single HTTP server for both Express and Socket.IO
 const server = http.createServer(app);
 setupSocketIO(server);
 
+let aiChain;
+export const initAI = async () => {
+    try {
+        const vectorStore = await createVectorStore();
+        aiChain = createStreamingChain(vectorStore);
+        global.aiChain = aiChain;
+        console.log("AI system initialized successfully");
+    } catch (error) {
+        console.error("AI initialization failed:", error);
+    }
+};
+
 connectDb()
-    .then(() => {
+    .then(async () => {
+        await initAI();
         server.listen(PORT, () => {
             console.log(`server is running on port ${PORT}`);
         });

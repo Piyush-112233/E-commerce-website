@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, firstValueFrom } from "rxjs";
 import { ChatMessage, Conversation } from "../types/chat.types";
 import { ChatApiService } from "./chat-api.service";
 import { ChatSocketService } from "./chat-socket.service";
@@ -29,7 +29,7 @@ export class ChatFacadeService {
         this.initializing = true;
 
         try {
-            const convRes = await this.api.createOrGetConversation().toPromise();
+            const convRes = await firstValueFrom(this.api.createOrGetConversation());
             if (!convRes?.data?.conv) return;
             
             const conv = convRes.data.conv;
@@ -85,7 +85,7 @@ export class ChatFacadeService {
             const currentMsgs = this.messageSubject.value || [];
             const before = currentMsgs.length > 0 ? currentMsgs[0].createdAt : undefined;
 
-            const res = await this.api.getMessage(conv._id, 30, before).toPromise();
+            const res = await firstValueFrom(this.api.getMessage(conv._id, 30, before));
             const olderMsgs = res?.data.messages || [];
 
             if (olderMsgs.length > 0) {

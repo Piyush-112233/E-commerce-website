@@ -13,7 +13,7 @@ const authCookieOptions = {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
-    maxAge: 1 * 60 * 1000,
+    maxAge: 15 * 60 * 1000,
 };
 
 const refreshAuthCookieOptions = {
@@ -427,7 +427,7 @@ const RefreshAccessToken = async (req, res) => {
         const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshTokens(user._id)
 
         res.cookie("accessToken", accessToken, authCookieOptions)
-            .cookie("refreshToken", newRefreshToken, authCookieOptions);
+            .cookie("refreshToken", newRefreshToken, refreshAuthCookieOptions);
 
         return res.status(201).json(
             new ApiResponse(200,
