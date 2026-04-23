@@ -92,11 +92,18 @@ export const productAdd = async (req, res) => {
         console.log("files:", req.files);
 
         // Upload to cloudinary (multer puts temp file path in req.files)
-        const upload = await uploadOnCloudinary(req.files?.images?.[0]?.path);
+        const localFilePath = req.files?.images?.[0]?.path;
+        console.log("Extracted localFilePath:", localFilePath);
+
+        if (!localFilePath) {
+            return res.status(400).json(new ApiError(400, "Image file is missing from request."));
+        }
+
+        const upload = await uploadOnCloudinary(localFilePath);
 
         if (!upload) {
             return res.status(400).json(
-                new ApiError(400, "Image Upload failed")
+                new ApiError(400, "Cloudinary upload failed. Check server console for details.")
             )
         }
 
@@ -174,8 +181,8 @@ export const productGetAll = async (req, res) => {
         const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
         const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
         // console.log("🔥 API HIT");
-        let products = await ProductModel.find().populate("categoryId", "name").skip((page -1) * limit).limit(limit);
-        
+        let products = await ProductModel.find().populate("categoryId", "name").skip((page - 1) * limit).limit(limit);
+
         // console.log("✅ Products:", products);
         const productObj = products.map(p => p.toObject());
         return res.status(200).json(
@@ -220,30 +227,30 @@ export const productGetById = async (req, res) => {
 
 // post /products/bulk
 export const bulkCreateProducts = async (req, res) => {
-  try {
-    const items = req.body?.products;
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ message: "products array required" });
+    try {
+        const items = req.body?.products;
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ message: "products array required" });
+        }
+
+        const normalized = items.map((p) => ({
+            name: (p?.name ?? "").toString().trim(),
+            price: Number(p?.price ?? 0),
+            categoryId: p?.categoryId ?? null, // allow null
+        }));
+
+        // still validate name + price
+        const bad = normalized.find(p => !p.name || !Number.isFinite(p.price) || p.price <= 0);
+        if (bad) {
+            return res.status(400).json({ message: "Each product requires valid name and price", badRow: bad });
+        }
+
+        const created = await ProductModel.insertMany(normalized, { ordered: false });
+
+        return res.status(201).json(
+            new ApiResponse(200, { createdCount: created.length, products: created }, "Bulk products created")
+        );
+    } catch (error) {
+        return res.status(500).json(new ApiError(500, `Server Error ${error.message}`));
     }
-
-    const normalized = items.map((p) => ({
-      name: (p?.name ?? "").toString().trim(),
-      price: Number(p?.price ?? 0),
-      categoryId: p?.categoryId ?? null, // allow null
-    }));
-
-    // still validate name + price
-    const bad = normalized.find(p => !p.name || !Number.isFinite(p.price) || p.price <= 0);
-    if (bad) {
-      return res.status(400).json({ message: "Each product requires valid name and price", badRow: bad });
-    }
-
-    const created = await ProductModel.insertMany(normalized, { ordered: false });
-
-    return res.status(201).json(
-      new ApiResponse(200, { createdCount: created.length, products: created }, "Bulk products created")
-    );
-  } catch (error) {
-    return res.status(500).json(new ApiError(500, `Server Error ${error.message}`));
-  }
 };

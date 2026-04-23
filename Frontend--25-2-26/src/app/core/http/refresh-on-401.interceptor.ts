@@ -3,12 +3,14 @@ import { inject } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthRefreshService } from './auth-refresh.service';
 import { SEND_CREDENTIALS, SKIP_REFRESH } from './auth-http-context';
+import { AuthService } from '../service/authService/auth-service';
 
 // const BACKEND_ORIGIN = 'http://localhost:3000';
 // const REFRESH_URL = `${BACKEND_ORIGIN}/api/users/refresh-token`;
 
 export const refreshOn401Interceptor: HttpInterceptorFn = (req, next) => {
   const refreshService = inject(AuthRefreshService);
+  const authService = inject(AuthService);
 
   // 1. Prepare the request (Auto-add withCredentials based on context)
   // const isBackend = req.url.startsWith(BACKEND_ORIGIN);
@@ -36,6 +38,8 @@ export const refreshOn401Interceptor: HttpInterceptorFn = (req, next) => {
       return refreshService.refreshAccessToken$().pipe(
         switchMap((newToken) => {
           if (!newToken) {
+            localStorage.removeItem('accessToken');
+            authService.clearMe();
             // Refresh failed (e.g., refresh token expired)
             return throwError(() => error);
           }
@@ -44,6 +48,8 @@ export const refreshOn401Interceptor: HttpInterceptorFn = (req, next) => {
           return next(outgoingReq);
         }),
         catchError((refreshErr) => {
+          localStorage.removeItem('accessToken');
+          authService.clearMe();
           // If the refresh call itself fails, propagate that error instead.
           return throwError(() => refreshErr);
         })

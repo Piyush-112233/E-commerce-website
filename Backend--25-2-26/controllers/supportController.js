@@ -258,8 +258,9 @@ export const closeConversation = async (req, res) => {
         if (!conv) return res.status(404).json(new ApiError(404, { message: "Conversation not found" }));
 
         if (req.user.role === "admin") {
-            if (!conv.adminId || String(conv.adminId) !== String(req.user._id)) {
-                return res.status(403).json(new ApiError(403, { message: "Only assigned admin can close it" }));
+            // Allow closing if conversation is unassigned OR if it is assigned to the current admin
+            if (conv.adminId && String(conv.adminId) !== String(req.user._id)) {
+                return res.status(403).json(new ApiError(403, { message: "This conversation is assigned to another admin. You cannot close it." }));
             }
         }
 

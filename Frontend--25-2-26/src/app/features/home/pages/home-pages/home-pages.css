@@ -159,6 +159,34 @@
   color: #ffffff;
 }
 
+/* Login link */
+.hp-login-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hp-login-link .material-icons {
+  font-size: 16px;
+}
+
+.hp-login-link:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #ffffff;
+}
+
 /* ---- LAYOUT ---- */
 .hp-layout {
   flex: 1;
@@ -173,9 +201,16 @@
   display: none;
   flex-direction: column;
   overflow-y: auto;
+  /*.hp-drawer had overflow-y: auto. This means the entire sidebar panel had a scrollbar */
   padding: 24px;
   animation: drawerFade 0.25s ease;
 }
+
+/* .hp-drawer .ai-chat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+} */
 
 .hp-drawer.open {
   display: flex;
@@ -330,8 +365,8 @@
 /* ---- FLOATING CHAT ---- */
 .chat-floating-btn {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: 80px;
+  right: 38px;
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -422,6 +457,10 @@
     display: none;
   }
 
+  .hp-login-link span:not(.material-icons) {
+    display: none;
+  }
+
   .hp-drawer {
     padding: 16px;
   }
@@ -432,6 +471,8 @@
     border-radius: 16px 16px 0 0;
   }
 }
+
+
 
 /* AI Chat Modal Styles */
 .ai-chat-overlay {
@@ -444,7 +485,7 @@
   display: flex;
   justify-content: flex-end;
   align-items: flex-end;
-  z-index: 1000;
+  z-index: 100;
 }
 
 .ai-chat-modal {

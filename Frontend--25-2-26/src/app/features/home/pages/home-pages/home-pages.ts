@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { map, Observable, startWith, Subscription } from 'rxjs';
 import { ChatPageComponent } from '../../../chat/pages/chat-page-component/chat-page-component';
 import { ChatFacadeService } from '../../../chat/services/chat-facade.service';
 import { ProductCart } from '../../../cart/product-cart/product-cart';
@@ -8,14 +8,19 @@ import { ProductService } from '../../../../core/service/productServices/product
 import { AuthService, MeResponse } from '../../../../core/service/authService/auth-service';
 import { CartService } from '../../../../core/service/cartService/cart-service';
 import { AiChatPage } from '../../../chat/pages/ai-chat-page/ai-chat-page';
+import { AsyncPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-home-pages',
-  imports: [ChatPageComponent, ProductCart, CartSummary, AiChatPage],
+  imports: [ChatPageComponent, ProductCart, CartSummary, AiChatPage, AsyncPipe, RouterLink],
   templateUrl: './home-pages.html',
   styleUrl: './home-pages.css',
 })
 export class HomePages implements OnInit, OnDestroy {
+
+  isLoggedIn$: Observable<boolean>;
+
   // Data
   categories: any[] = [];
   products: any[] = [];
@@ -36,6 +41,7 @@ export class HomePages implements OnInit, OnDestroy {
   // Current user info
   currentUser: MeResponse | null = null;
 
+
   // Chat
   isChatOpen = false;
   hasOpenedChat = false;
@@ -48,7 +54,12 @@ export class HomePages implements OnInit, OnDestroy {
     private productService: ProductService,
     private authService: AuthService,
     private cartService: CartService
-  ) { }
+  ) {
+    this.isLoggedIn$ = this.authService.$me.pipe(
+      map((me) => !!me),
+      startWith(false)
+    );
+  }
 
   ngOnInit() {
     // Unread chat count
@@ -121,7 +132,11 @@ export class HomePages implements OnInit, OnDestroy {
   }
 
   logout() {
-    this.authService.logout().subscribe();
+    this.authService.logout().subscribe({
+      error: () => {
+
+      },
+    });
   }
 
 

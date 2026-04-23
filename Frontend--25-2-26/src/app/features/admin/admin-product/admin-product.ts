@@ -29,6 +29,7 @@ export class AdminProduct implements AfterViewInit {
     'image',
     'name',
     'price',
+    'stock',
     'categoryId',
     'actions'
   ];
@@ -50,6 +51,7 @@ export class AdminProduct implements AfterViewInit {
       {
         name: [''],
         price: [''],
+        stock: [null],
         categoryId: [null],
         image: []
       }
@@ -101,35 +103,73 @@ export class AdminProduct implements AfterViewInit {
   }
 
   addProduct() {
-    const value = this.productForm.value
-    // console.log("FORM DATA:", value);
-    if (!value.categoryId) {
+    const value = this.productForm.value;
+
+    // 👇 Check if categoryId is an object (from populate), and extract just the _id string
+    const normalizedCategoryId = typeof value.categoryId === 'object' && value.categoryId !== null
+      ? value.categoryId?._id
+      : value.categoryId;
+
+
+    const payload = {
+      name: (value.name ?? '').toString().trim(),
+      price: Number(value.price),
+      stock: Number(value.stock) || 0,
+      categoryId: normalizedCategoryId
+    };
+
+
+    if (!payload.name) {
+      alert('Please enter a product name');
+      return;
+    }
+
+    if (!Number.isFinite(payload.price) || payload.price <= 0) {
+      alert('Please enter a valid product price');
+      return;
+    }
+
+    if (!payload.categoryId) {
       alert("Please select a category");
       return;
     }
+
+
     if (this.selectedProductById) {
-      this.productService.updateProducts(value, this.selectedProductById).subscribe({
+
+      // update Products
+      this.productService.updateProducts(payload as any, this.selectedProductById).subscribe({
         next: (_data: any) => {
           this.getProduct();
           this.isEditMode = false
           alert("Product Update")
+          this.productForm.reset();
+          this.selectedProductById = null
         },
-        error: (_error: any) => {
-          alert("Not Updated")
+        error: (error: any) => {
+          alert(error?.error?.message || "Not Updated")
         }
       })
+
     } else {
-      // console.log(value)
-      this.productService.createProducts(value, this.files).subscribe({
+
+      if (!this.files.length) {
+        alert('Please choose at least one image');
+        return;
+      }
+
+      // create Product
+      this.productService.createProducts(payload, this.files).subscribe({
 
         next: (_data: any) => {
           // console.log(_data.data.productObj)
           this.products.data = [...this.products.data, _data.data.productObj]
           this.productForm.reset();
+          this.files = [];
           alert("Category Added")
         },
-        error: (_error: any) => {
-          alert("Product not found")
+        error: (error: any) => {
+          alert(error?.error?.message || "Product not found")
         }
       })
     }
@@ -139,10 +179,16 @@ export class AdminProduct implements AfterViewInit {
     this.isEditMode = true
     this.selectedProductById = prod._id;
 
+    // 👇 Check if categoryId is an object (from populate), and extract just the _id string
+    const catId = typeof prod.categoryId === 'object' && prod.categoryId !== null
+      ? prod.categoryId?._id
+      : prod.categoryId;
+
     this.productForm.patchValue({
       name: prod.name,
       price: prod.price,
-      categoryId: prod.categoryId,
+      stock: prod.stock,
+      categoryId: catId,
       image: prod.image
     });
   }
@@ -208,7 +254,7 @@ export class AdminProduct implements AfterViewInit {
     //   }
     // );
     const rows = this.products?.data ?? [];
-    
+
     if (!rows.length) {
       alert('No data to export');
       return;

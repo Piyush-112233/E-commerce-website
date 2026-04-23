@@ -7,6 +7,7 @@ import { RunnableSequence } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import mongoose from "mongoose";
 import crypto from "node:crypto";
+import { getHardcodedKnowledgeDocuments } from "./knowledge.documents.js";
 
 const normalizeChunkText = (text) => {
     if (typeof text !== "string") return "";
@@ -19,6 +20,31 @@ const normalizeChunkText = (text) => {
         .join(" ")
         .replace(/\s{2,}/g, " ")
         .trim();
+};
+
+const normalizeType = (value) => {
+    const lowered = String(value || "").toLowerCase().trim();
+    if (lowered === "hardcoded") return "hardcoded";
+    if (lowered === "web") return "web";
+    return "unknown";
+};
+
+const inferDocTypeFromSource = (source = "") => {
+    if (typeof source !== "string") return "unknown";
+    if (source.startsWith("internal:")) return "hardcoded";
+    if (/^https?:\/\//i.test(source)) return "web";
+    return "unknown";
+};
+
+const detectRetrievalScope = (question = "") => {
+    const text = String(question || "").toLowerCase();
+
+    const asksWebsite = /\b(website|web\s?site|webpage|web\s?page|site|url|link from website|blog|article|langchain|source url|online content)\b/i.test(text);
+    const asksHardcoded = /\b(hardcoded|hard\s?coded|internal|product info|policy|shipping|return|refund|support hours|lighter|cooler|marshall)\b/i.test(text);
+
+    if (asksWebsite && !asksHardcoded) return "web";
+    if (asksHardcoded && !asksWebsite) return "hardcoded";
+    return "all";
 };
 
 
@@ -39,7 +65,7 @@ const cosineSimilarity = (a = [], b = []) => {
     if (magA === 0 || magB === 0) return -1;
     return dot / (Math.sqrt(magA) * Math.sqrt(magB));
 };
-// console.log("1")
+// console.log("1",cosineSimilarity);
 
 
 // Making collection in MongoDB
@@ -47,8 +73,9 @@ const getChunksCollection = () => mongoose.connection.collection("ai_document_ch
 
 // Multiple source URLs are now supported from environment list.
 const getKnowledgeSources = () => {
-    const defaultSource = "https://dummyjson.com/products";
-    const sourceList = String(process.env.AI_SOURCE_URLS || defaultSource)
+    // const defaultSource = "https://dummyjson.com/products";
+    const raw = process.env.AI_SOURCE_URLS || "";
+    const sourceList = raw
         .split(",")
         .map((url) => url.trim())
         .filter(Boolean);
@@ -70,6 +97,7 @@ const loadDocumentsFromSources = async (sources) => {
                 doc.metadata = {
                     ...(doc.metadata || {}),
                     source,
+                    type: "web",
                 };
                 loadedDocs.push(doc);
             }
@@ -88,11 +116,15 @@ const upsertChunksInMongo = async ({ splitDocs, embeddings }) => {
     // Existing chunks are skipped using hash identity, so only new chunks are embedded.
     const docsWithHash = splitDocs.map((doc, idx) => {
         const source = doc.metadata?.source || "unknown";
+        const docType = normalizeType(doc.metadata?.type || inferDocTypeFromSource(source));
+        const title = typeof doc.metadata?.title === "string" ? doc.metadata.title : "";
         const content = doc.pageContent;
         const chunkHash = crypto.createHash("sha256").update(`${source}:${idx}:${content}`).digest("hex");
 
         return {
             source,
+            docType,
+            title,
             content,
             chunkIndex: idx,
             chunkHash,
@@ -122,6 +154,8 @@ const upsertChunksInMongo = async ({ splitDocs, embeddings }) => {
                 update: {
                     $set: {
                         source: doc.source,
+                        docType: doc.docType,
+                        title: doc.title,
                         chunkIndex: doc.chunkIndex,
                         content: doc.content,
                         embedding: vectors[idx],
@@ -150,12 +184,18 @@ const upsertChunksInMongo = async ({ splitDocs, embeddings }) => {
 // Retrieval now reads from DB:
 //First tries Atlas native vector search via $vectorSearch (if vector index exists).
 //If unavailable, falls back to cosine similarity ranking in Node on stored embeddings.
-const retrieveRelevantChunks = async ({ query, embeddings, k, sources = [] }) => {
+const retrieveRelevantChunks = async ({ query, embeddings, k, sources = [], docTypes = [] }) => {
     const collection = getChunksCollection();
     const queryVector = await embeddings.embedQuery(query);
     const vectorIndexName = process.env.MONGODB_VECTOR_INDEX || "ai_chunks_vector_index";
-    //Retrieval now searches across all configured sources.
+    const MIN_SIMILARITY = Number(process.env.AI_MIN_SIMILARITY || 0.35);
+
     const sourceFilter = sources.length ? { source: { $in: sources } } : {};
+    const normalizedDocTypes = Array.isArray(docTypes)
+        ? docTypes.map((item) => normalizeType(item)).filter((item) => item !== "unknown")
+        : [];
+    const typeFilter = normalizedDocTypes.length ? { docType: { $in: normalizedDocTypes } } : {};
+    const combinedFilter = { ...sourceFilter, ...typeFilter };
 
     // Prefer Atlas vector search if index exists; fallback to JS cosine ranking.
     try {
@@ -167,7 +207,7 @@ const retrieveRelevantChunks = async ({ query, embeddings, k, sources = [] }) =>
                     queryVector,
                     numCandidates: Math.max(20, k * 8),
                     limit: k,
-                    ...(sources.length ? { filter: sourceFilter } : {}),
+                    ...(Object.keys(combinedFilter).length ? { filter: combinedFilter } : {}),
                 },
             },
             {
@@ -181,14 +221,17 @@ const retrieveRelevantChunks = async ({ query, embeddings, k, sources = [] }) =>
 
         const results = await collection.aggregate(pipeline).toArray();
         if (results.length > 0) {
-            return results.map((item) => item.content);
+            return results
+                .filter((item) => item.score >= MIN_SIMILARITY)
+                .map((item) => ({ content: item.content, score: item.score }));
         }
+        console.log(results)
     } catch (_error) {
         // Ignore and use fallback below.
     }
 
     const docs = await collection.find(
-        sourceFilter,
+        combinedFilter,
         { projection: { _id: 0, content: 1, embedding: 1 } }
     ).toArray();
 
@@ -197,9 +240,9 @@ const retrieveRelevantChunks = async ({ query, embeddings, k, sources = [] }) =>
             content: doc.content,
             score: cosineSimilarity(queryVector, doc.embedding),
         }))
+        .filter((doc) => doc.score >= MIN_SIMILARITY)
         .sort((a, b) => b.score - a.score)
         .slice(0, k)
-        .map((doc) => doc.content);
 
     return ranked;
 };
@@ -209,18 +252,32 @@ const retrieveRelevantChunks = async ({ query, embeddings, k, sources = [] }) =>
 
 export const createVectorStore = async () => {
     console.log("--- Initializing Persistent Vector Store (MongoDB) ---");
-    const sources = getKnowledgeSources();
-    const docs = await loadDocumentsFromSources(sources);
+
+    const webSources = getKnowledgeSources();
+    const webDocs = await loadDocumentsFromSources(webSources);
+
+    const hardcodedDocs = getHardcodedKnowledgeDocuments();
+
+    const docs = [...webDocs, ...hardcodedDocs];
+
+    const hardcodedSources = hardcodedDocs
+        .map((doc) => doc.metadata?.source)
+        .filter(Boolean);
+    const sources = [...new Set([...webSources, ...hardcodedSources])];
 
     if (!docs.length) {
-        throw new Error("No documents loaded from configured AI_SOURCE_URLS");
+        throw new Error("No documents loaded from AI_SOURCE_URLS or hardcoded knowledge documents");
     }
 
     const splitter = new RecursiveCharacterTextSplitter({ chunkSize: 600, chunkOverlap: 80 });
-    const splitDocs = (await splitter.splitDocuments(docs)).filter((doc) => {
-        doc.pageContent = normalizeChunkText(doc.pageContent);
-        return doc.pageContent.length > 0;
-    });
+    // Change to much larger chunks (e.g., 4000 characters):  Large context models can read entire pages at once.
+    // const splitter = new RecursiveCharacterTextSplitter({ chunkSize: 4000, chunkOverlap: 400 });
+
+    const splitDocs = (await splitter.splitDocuments(docs))
+        .filter((doc) => {
+            doc.pageContent = normalizeChunkText(doc.pageContent);
+            return doc.pageContent.length > 0;
+        });
 
     const embeddings = new GoogleGenerativeAIEmbeddings({
         apiKey: process.env.GOOGLE_API_KEY,
@@ -230,6 +287,17 @@ export const createVectorStore = async () => {
     const collection = getChunksCollection();
     await collection.createIndex({ chunkHash: 1 }, { unique: true });
     await collection.createIndex({ source: 1, chunkIndex: 1 });
+    await collection.createIndex({ docType: 1, source: 1, chunkIndex: 1 });
+
+    // Backfill type tags for older chunks created before docType was introduced.
+    await collection.updateMany(
+        { docType: { $exists: false }, source: /^internal:/i },
+        { $set: { docType: "hardcoded", updatedAt: new Date() } }
+    );
+    await collection.updateMany(
+        { docType: { $exists: false }, source: /^https?:\/\//i },
+        { $set: { docType: "web", updatedAt: new Date() } }
+    );
 
     //Rebuild still works if you want to force re-embedding.
     const shouldRebuild = String(process.env.AI_REBUILD_EMBEDDINGS || "false").toLowerCase() === "true";
@@ -260,21 +328,122 @@ export const createVectorStore = async () => {
     return {
         embeddings,
         sources,
+        sourceGroups: {
+            web: webSources,
+            hardcoded: hardcodedSources,
+        },
     };
 }
 
 export const createStreamingChain = (vectorStore) => {
+    // if we use Larger context window we need to switch model for massive context input
     const model = new ChatGroq({
         apiKey: process.env.GROQ_API_KEY,
         model: 'llama-3.1-8b-instant',
-        temperature: 0.7,
+        temperature: 0.2,  //
         streaming: true,
     });
+
+    // // Change to grab way more chunks:  const retrievalK = 20; // or 50!
 
     const retrievalK = Number(process.env.AI_RETRIEVAL_K || 4);
 
     const prompt = ChatPromptTemplate.fromMessages([
-        ["system", "You are the Masters AI Support Assistant. Use the following context to answer the user's question:\n\n{context}\n\nAlways format your responses properly using Markdown. Use bolding for emphasis, bullet points for lists, and break down complex concepts into easy-to-read headers. Be precise, professional, and helpful."],
+        // ["system", "You are the Masters AI Support Assistant. Use the following context to answer the user's question:\n\n{context}\n\nAlways format your responses properly using Markdown. Use bolding for emphasis, bullet points for lists, and break down complex concepts into easy-to-read headers. Be precise, professional, and helpful."],
+        ["system", `
+            You are the Masters AI Shopping Assistant for this website.
+            
+            YOUR ROLE:
+            - Help users with product discovery, product details, pricing, features, and website policies (shipping, returns, support).
+            - Act like a professional e-commerce assistant similar to Amazon Rufus.
+
+            ----------------------------------------
+            STRICT RULES (MUST FOLLOW):
+
+            1) SOURCE OF TRUTH
+            - Answer ONLY using the provided CONTEXT.
+            - Do NOT use outside knowledge, assumptions, or memory.
+
+            2) OUT-OF-SCOPE HANDLING
+            - If answer is not found in CONTEXT OR CONTEXT is "__NO_CONTEXT__", reply EXACTLY:
+            "Sorry, I can only answer questions based on the provided website content."
+
+            3) GREETINGS
+            - If user sends greetings (hi, hello, hey, good morning, etc.):
+            Reply briefly and ask how you can help with products or support.
+
+            4) RESPONSE STYLE
+            - Keep responses medium-length, clear, and helpful.
+            - Target around 4 to 8 lines for normal answers.
+            - For product details, expand it when user asks for more.
+            - Use Markdown formatting.
+            - Do NOT add unnecessary explanations.
+
+            ----------------------------------------
+            PRODUCT RESPONSE RULES:
+
+            5) WHEN USER ASKS ABOUT PRODUCTS:
+            - Include:
+            - Product Name
+            - Price
+            - Key Features (6–7 bullet points)
+            - If multiple products found:
+            - Show them in a clean bullet list
+
+            6) PRODUCT LINKS:
+            - ALWAYS return links in Markdown:
+            [View Product](PRODUCT_LINK)
+
+            - NEVER generate or guess links
+            - ONLY use links from CONTEXT
+
+            7) PRODUCT IMAGES:
+            - If user asks for image/photo/picture:
+            - If Image URL exists:
+                Return EXACTLY:
+                ![Product Image](IMAGE_URL)
+                [View Product](PRODUCT_LINK)
+
+            - If Image URL not available:
+                Reply:
+                "Sorry, I can only answer questions based on the provided website content."
+
+            ----------------------------------------
+            POLICY RESPONSE RULES:
+
+            8) FOR SHIPPING / RETURN / SUPPORT:
+            - Give short, clear, direct answers
+            - Do NOT include product formatting
+            - Example: delivery time, refund days, support hours
+
+            ----------------------------------------
+            SMART BEHAVIOR:
+
+            9) INTENT HANDLING:
+            - Detect user intent:
+            - product search → show products
+            - product detail → show one product
+            - policy → answer policy
+            - greeting → respond friendly
+
+            10) NO HALLUCINATION:
+            - Do NOT invent:
+            - products
+            - prices
+            - links
+            - features
+
+            ----------------------------------------
+            FINAL CHECK BEFORE ANSWERING:
+            - Is answer in CONTEXT? If NO → fallback response
+            - Are links from CONTEXT? If NO → do not include
+            - Is format clean Markdown? YES
+
+            ----------------------------------------
+
+            CONTEXT:
+            {context}
+        `],
         new MessagesPlaceholder("chat_history"),
         ["human", "{input}"]
     ]);
@@ -284,7 +453,9 @@ export const createStreamingChain = (vectorStore) => {
         CRITICAL RULES:
         1. ONLY output the final rephrased query string.
         2. DO NOT add any conversational text, explanations, or greetings.
-        3. If the input is just a number (like "1"), look at the history to determine what "1" refers to and generate a query for it.`],
+        3. If the input is just a number (like "1"), look at the history to determine what "1" refers to and generate a query for it.
+        4. Do not broaden scope. Keep user intent unchanged.
+        5. If message is already standalone, return it as-is.`],
         new MessagesPlaceholder("chat_history"),
         ["human", "{input}"]
     ]);
@@ -316,14 +487,76 @@ export const createStreamingChain = (vectorStore) => {
         {
             // A. Generate the context using the standalone question
             context: async (input) => {
-                const relevantChunks = await retrieveRelevantChunks({
-                    query: input.standalone_question,
-                    embeddings: vectorStore.embeddings,
-                    k: retrievalK,
-                    sources: vectorStore.sources,
-                });
+                const scope = detectRetrievalScope(input.standalone_question);
 
-                return relevantChunks.join("\n\n");
+                if (scope === "web") {
+                    const webChunks = await retrieveRelevantChunks({
+                        query: input.standalone_question,
+                        embeddings: vectorStore.embeddings,
+                        k: retrievalK,
+                        sources: vectorStore.sourceGroups?.web || vectorStore.sources,
+                        docTypes: ["web"],
+                    });
+
+                    if (!webChunks.length) {
+                        return "__NO_CONTEXT__";
+                    }
+
+                    return webChunks.map((c) => c.content).join("\n\n");
+                }
+
+                if (scope === "hardcoded") {
+                    const hardcodedChunks = await retrieveRelevantChunks({
+                        query: input.standalone_question,
+                        embeddings: vectorStore.embeddings,
+                        k: retrievalK,
+                        sources: vectorStore.sourceGroups?.hardcoded || vectorStore.sources,
+                        docTypes: ["hardcoded"],
+                    });
+
+                    if (!hardcodedChunks.length) {
+                        return "__NO_CONTEXT__";
+                    }
+
+                    return hardcodedChunks.map((c) => c.content).join("\n\n");
+                }
+
+                const [webChunks, hardcodedChunks] = await Promise.all([
+                    retrieveRelevantChunks({
+                        query: input.standalone_question,
+                        embeddings: vectorStore.embeddings,
+                        k: retrievalK,
+                        sources: vectorStore.sourceGroups?.web || vectorStore.sources,
+                        docTypes: ["web"],
+                    }),
+                    retrieveRelevantChunks({
+                        query: input.standalone_question,
+                        embeddings: vectorStore.embeddings,
+                        k: retrievalK,
+                        sources: vectorStore.sourceGroups?.hardcoded || vectorStore.sources,
+                        docTypes: ["hardcoded"],
+                    }),
+                ]);
+
+                const bestWebScore = webChunks[0]?.score ?? -1;
+                const bestHardcodedScore = hardcodedChunks[0]?.score ?? -1;
+
+                let relevantChunks = [];
+                if (bestWebScore - bestHardcodedScore > 0.05) {
+                    relevantChunks = webChunks;
+                } else if (bestHardcodedScore - bestWebScore > 0.05) {
+                    relevantChunks = hardcodedChunks;
+                } else {
+                    relevantChunks = [...webChunks, ...hardcodedChunks]
+                        .sort((a, b) => b.score - a.score)
+                        .slice(0, retrievalK);
+                }
+
+                if (!relevantChunks.length) {
+                    return "__NO_CONTEXT__";
+                }
+
+                return relevantChunks.map((c) => c.content).join("\n\n");
             },
             // B. CAREFUL: You MUST pass the original input forward to the prompt!
             input: (input) => input.input,
@@ -335,7 +568,7 @@ export const createStreamingChain = (vectorStore) => {
         model,
         new StringOutputParser(),
     ]);
-    
+
     //AI says: "1. NextJS, 2. React, 3. Vue"
     //You say: "Tell me more about point 2"
     //Step 1 (Rephrase) sees history and changes it to: "Tell me more about React."

@@ -41,9 +41,9 @@ export class ProductService {
 
 
   // update products
-  updateProducts(name: string, id: string) {
+  updateProducts(productData: any, id: string) {
     const url = `http://localhost:3000/api/admin/product/${id}`
-    return this.http.put(url, { name })
+    return this.http.put(url, productData)
   }
 
   // delete Products

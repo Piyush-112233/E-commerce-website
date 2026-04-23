@@ -1,9 +1,12 @@
 <div class="ai-chat-container">
     <div class="ai-chat-header">
-        <h3>MastersUnion AI Assistant</h3>
+        <div class="ai-chat-header-row">
+            <h2 class="ai-chat-header-brand">AI Chat</h2>
+            <span class="ai-chat-header-brand">MastersUnion AI Assistant</span>
+        </div>
     </div>
 
-    <div class="ai-chat-messages">
+    <div #messagesContainer class="ai-chat-messages" (scroll)="onMessagesScroll()">
         @for (msg of aiChatService.messages(); track $index) {
         <!-- <div class="message-bubble" [class.human]="msg.role === 'human'" [class.ai]="msg.role === 'ai'">
             {{ msg.content }}
@@ -12,7 +15,7 @@
             @if (msg.role === 'human') {
             {{ msg.content }}
             } @else {
-                If you want the **bold** text to actually be bold, and you want real bullet points
+            <!-- If you want the **bold** text to actually be bold, and you want real bullet points -->
             <markdown [data]="msg.content"></markdown>
             }
         </div>
@@ -21,6 +24,14 @@
         <div class="typing-indicator">AI is typing...</div>
         }
     </div>
+
+    @if (showScrollDown) {
+    <button type="button" class="scroll-down-btn" (click)="scrollToBottom('auto')">
+        ↓
+    </button>
+    }
+
+
     <div class="ai-chat-input">
         <input type="text" [(ngModel)]="userInput" (keyup.enter)="sendMessage()" placeholder="Ask me anything..."
             [disabled]="aiChatService.isStreaming()" />

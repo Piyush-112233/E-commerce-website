@@ -8,10 +8,10 @@ import { Component } from '@angular/core';
   styleUrl: './navbar.css',
 })
 export class Navbar {
-  isLoggedIn = true;
+  // isLoggedIn = true;
 
-  ngOnInit() {
-    const token = localStorage.getItem("accessToken")
-    this.isLoggedIn = !!token;
-  }
+  // ngOnInit() {
+  //   const token = localStorage.getItem("accessToken")
+  //   this.isLoggedIn = !!token;
+  // }
 }

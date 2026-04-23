@@ -32,8 +32,8 @@
         <div><b>Status:</b> {{ selectedConversation.status }}</div>
       </div>
       <div class="actions">
-        <button (click)="assignSelected()">Assign to me</button>
-        <button (click)="closeSelected()">Close</button>
+        <button (click)="assignSelected()" [disabled]="selectedConversation.status === 'closed'">Assign to me</button>
+        <button (click)="closeSelected()" [disabled]="selectedConversation.status === 'closed'">Close</button>
       </div>
     </div>
 
@@ -56,7 +56,7 @@
 
     <div class="input-row">
       <input type="text" [(ngModel)]="messageText" (keyup.enter)="sendMessage()" placeholder="Type reply..." />
-      <button (click)="sendMessage()">Send</button>
+      <button (click)="sendMessage()" [disabled]="selectedConversation.status === 'closed'">Send</button>
     </div>
   </section>
 

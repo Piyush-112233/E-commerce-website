@@ -18,7 +18,11 @@ adminRouter.get("/category/getAll", categoryGetAll);
 
 // Product Router
 adminRouter.post("/product",
-    upload.fields([{ name: "images", maxCount: 1 }]),
+    upload.fields([
+        { name: "images", maxCount: 5 },
+        { name: "image", maxCount: 1 },
+        { name: "images[]", maxCount: 5 },
+    ]),
     isAuthVerifyJwt,
     authorizeRoles("admin"),
     productAdd

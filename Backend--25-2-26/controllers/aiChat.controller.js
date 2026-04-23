@@ -16,8 +16,10 @@ export const streamAiChat = async (req, res) => {
         console.log("Conversation:", conv);
 
 
-        // 2. Format history for Langchain (Window Memory: (.slice(-6)) Only pass the last 6 messages!)
-        const chatHistory = conv.history.slice(-6).map(msg =>
+        // 2. Format history for Langchain (Window Memory: (.slice(-10)) Only pass the last 6 messages!)
+        // Change to allow massive history (e.g., last 50 messages, or remove slice entirely):
+        // const chatHistory = conv.history.slice(-50).map(...)
+        const chatHistory = conv.history.slice(-10).map(msg =>
             msg.role === 'human' ? new HumanMessage(msg.content) : new AIMessage(msg.content)
         );
         console.log("Chat History:", chatHistory);
@@ -54,7 +56,7 @@ export const streamAiChat = async (req, res) => {
         await conv.save();
 
         // 7. Close stream
-        res.write('data: [Done]\n\n');
+        res.write('data: [DONE]\n\n');
         res.end();
     } catch (error) {
         console.error("AI Stream Error:", error);

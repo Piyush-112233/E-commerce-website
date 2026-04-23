@@ -5,14 +5,16 @@
     <span class="hp-brand-name">Masters Shop</span>
   </div>
 
+  <!-- Drawer toggle buttons -->
   <nav class="hp-navbar-actions">
-    <!-- Drawer toggle buttons -->
+    <!-- Products -->
     <button type="button" class="hp-nav-tab" [class.active]="activeDrawer === 'products'"
       (click)="openDrawer('products')" id="nav-products-tab">
       <span class="material-icons">grid_view</span>
       Products
     </button>
 
+    <!-- Cart-->
     <button type="button" class="hp-nav-tab" [class.active]="activeDrawer === 'cart'" (click)="openDrawer('cart')"
       id="nav-cart-tab">
       <span class="material-icons">shopping_cart</span>
@@ -22,14 +24,24 @@
       }
     </button>
 
+
     <!-- User welcome & Logout -->
     @if (currentUser) {
     <span class="hp-user-greeting">Hi, {{ currentUser.name || currentUser.email }}</span>
     }
+    @if (isLoggedIn$ | async) {
     <button type="button" class="hp-logout-btn" (click)="logout()" id="logout-btn">
-      <span class="material-icons">logout</span>
-      Logout
+      <span class="material-icons" aria-hidden="true">logout</span>
+      <span>Logout</span>
     </button>
+    } @else {
+    <a class="hp-login-link" routerLink="/auth/login" id="login-link">
+      <span class="material-icons" aria-hidden="true">login</span>
+      <span>Login</span>
+    </a>
+    }
+
+    <!-- AI Chat-->
     <button type="button" class="hp-nav-tab" [class.active]="activeDrawer === 'ai-chat'" (click)="openDrawer('ai-chat')"
       id="nav-ai-chat-tab">
       <span class="material-icons">smart_toy</span>
@@ -54,7 +66,7 @@
     </div>
 
 
-    <!-- Category chips -->
+    <!------- Category chips --------->
     @if (loadingCategories) {
     <p class="hp-muted">Loading categories…</p>
     } @else {
@@ -72,8 +84,7 @@
     <div class="hp-error-banner" role="alert">{{ error }}</div>
     }
 
-
-    <!-- Products grid -->
+    <!------ Products grid -------->
     @if (loadingProducts) {
     <div class="hp-skeleton-grid">
       @for (_ of skeletons; track $index) {
@@ -95,7 +106,7 @@
     }
   </aside>
 
-  <!-- CART DRAWER -->
+  <!-------- CART DRAWER --------->
   <aside class="hp-drawer" [class.open]="activeDrawer === 'cart'" id="cart-drawer">
     <div class="hp-drawer-header">
       <h2>Your Cart</h2>
@@ -107,9 +118,8 @@
   </aside>
 
 
-  <!-- AI Chat DRAWER -->
-  <aside class="hp-drawer" [class.open]="activeDrawer === 'ai-chat'" id="ai-chat-drawer">
-    <h2>AI Chat</h2>
+  <!-- AI Chat Bot DRAWER -->
+  <aside class="hp-drawer" style="overflow-y: hidden;" [class.open]="activeDrawer === 'ai-chat'" id="ai-chat-drawer">
     <app-ai-chat-page></app-ai-chat-page>
   </aside>
 

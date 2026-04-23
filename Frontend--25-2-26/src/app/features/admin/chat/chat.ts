@@ -145,12 +145,14 @@ export class Chat implements OnInit, OnDestroy {
 
   closeSelected() {
     if (!this.selectedConversation) return;
+    if (this.selectedConversation.status === 'closed') return;
+
     this.api.closeConversation(this.selectedConversation._id).subscribe({
-      next: (res: any) => {
+      next: (res) => {
         this.selectedConversation = res.data.conv;
         this.loadConversations();
       },
-      error: (err: any) => console.error(err),
+      error: (err) => console.error(err.message),
     });
   }
 
@@ -158,6 +160,7 @@ export class Chat implements OnInit, OnDestroy {
   sendMessage() {
     const text = this.messageText.trim();
     if (!this.selectedConversation || !text) return;
+    if (this.selectedConversation.status === 'closed') return;
 
     const convId = this.selectedConversation._id;
     this.messageText = '';

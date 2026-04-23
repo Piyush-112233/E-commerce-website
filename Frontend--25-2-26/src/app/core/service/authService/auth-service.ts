@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, Observable, of, ReplaySubject, tap } from 'rxjs';
+import { catchError, map, Observable, of, ReplaySubject, tap, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { authEndpointsContext } from '../../http/auth-http-context';
 
@@ -112,9 +112,18 @@ export class AuthService {
   logout(): Observable<any> {
     return this.http.post('http://localhost:3000/api/users/logout', {}, { withCredentials: true }).pipe(
       tap(() => {
+        // when logout the access token will clear from localStorage
+        localStorage.removeItem('accessToken');
         this.clearMe();
         this.router.navigateByUrl('/auth/login');
       }),
+      catchError((err) => {
+        // when logout the access token will clear from localStorage
+        localStorage.removeItem('accessToken');
+        this.clearMe();
+        this.router.navigateByUrl('/auth/login');
+        return throwError(() => err);
+      })
     )
   };
 }
