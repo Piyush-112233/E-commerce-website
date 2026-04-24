@@ -111,6 +111,23 @@ export const productAdd = async (req, res) => {
         const product = await ProductModel.create({ ...productData, imageUrl: upload.secure_url || upload.url, imagePublicId: upload.public_id })
         // console.log("✅ Products:", product);
         const productObj = product.toObject();
+
+
+        // Broadcast the notification to all connected users
+        if (global.io) {
+
+            console.log("------>BACKEND: Emitting new notification via Socket.io!");
+
+            global.io.emit("notification:new", {
+                title: "New Product Alert! 🚀",
+                message: `${product.name} is now available in the store!`,
+                time: new Date()
+            });
+        } else {
+            console.log("-------->BACKEND: global.io is UNDEFINED!");
+        }
+
+
         res.status(201).json(
             new ApiResponse(
                 200,
@@ -136,10 +153,31 @@ export const productUpdate = async (req, res) => {
         console.log("ID:", req.params.id);
         console.log("Body", req.body)
 
+        // 1. Update the product in MongoDB
         const update = await ProductModel.findByIdAndUpdate({ _id: id },
             req.body  // Update Everything
         );
         console.log(update)
+
+
+        // 2. ADD THIS: Emit the notification for the update!
+        if (global.io) {
+
+            console.log("------>BACKEND: Emitting new notification via Socket.io!");
+
+            // Note: 'update' might hold the old document data, but it still has the product name!
+
+            const productName = req.body.name || update.name || "A product";
+            
+            global.io.emit("notification:new", {
+                title: "New Product Alert! 🚀",
+                message: `${productName} is now available in the store!`,
+                time: new Date()
+            });
+        } else {
+            console.log("-------->BACKEND: global.io is UNDEFINED!");
+        }
+
         res.status(201).json(
             new ApiResponse(
                 200,

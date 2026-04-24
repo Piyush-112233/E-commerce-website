@@ -21,6 +21,11 @@ export const setupSocketIO = (server) => {
         maxHttpBufferSize: 1e7, // 10MB limit
     });
 
+
+    // 👇 ADD THIS LINE so other files can use it!    for Notification
+    global.io = io;
+
+
     // Socket auth (JWT via handshake.auth.token OR cookie accessToken)
     io.use(async (socket, next) => {
         try {
@@ -114,6 +119,7 @@ export const setupSocketIO = (server) => {
                 });
 
                 const incField = isCustomer ? "unreadCountAdmin" : "unreadCountCustomer";
+                console.log(incField);
 
                 // Conversation updated
                 await ConversationModel.updateOne(

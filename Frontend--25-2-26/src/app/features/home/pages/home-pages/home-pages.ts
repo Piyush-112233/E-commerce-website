@@ -8,18 +8,19 @@ import { ProductService } from '../../../../core/service/productServices/product
 import { AuthService, MeResponse } from '../../../../core/service/authService/auth-service';
 import { CartService } from '../../../../core/service/cartService/cart-service';
 import { AiChatPage } from '../../../chat/pages/ai-chat-page/ai-chat-page';
-import { AsyncPipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+// import { AsyncPipe } from '@angular/common';
+// import { RouterLink } from '@angular/router';
+import { Navbar } from '../../../../shared/components/navbar/navbar';
 
 @Component({
   selector: 'app-home-pages',
-  imports: [ChatPageComponent, ProductCart, CartSummary, AiChatPage, AsyncPipe, RouterLink],
+  imports: [ChatPageComponent, ProductCart, CartSummary, AiChatPage, Navbar],
   templateUrl: './home-pages.html',
   styleUrl: './home-pages.css',
 })
 export class HomePages implements OnInit, OnDestroy {
 
-  isLoggedIn$: Observable<boolean>;
+
 
   // Data
   categories: any[] = [];
@@ -29,18 +30,16 @@ export class HomePages implements OnInit, OnDestroy {
   loadingProducts = false;
   error: string | null = null;
 
-  // Drawer state: 'products' | 'cart'
-  activeDrawer: 'products' | 'cart' | 'ai-chat' = 'products';
-
-  // Cart count badge
-  cartCount = 0;
 
   // Skeleton loading placeholders
   skeletons = Array(6).fill(null);
 
-  // Current user info
-  currentUser: MeResponse | null = null;
 
+
+
+  // Drawer state
+  activeDrawer: 'products' | 'cart' | 'ai-chat' = 'products';
+  cartCount = 0;
 
   // Chat
   isChatOpen = false;
@@ -52,14 +51,8 @@ export class HomePages implements OnInit, OnDestroy {
   constructor(
     private chatFacade: ChatFacadeService,
     private productService: ProductService,
-    private authService: AuthService,
     private cartService: CartService
-  ) {
-    this.isLoggedIn$ = this.authService.$me.pipe(
-      map((me) => !!me),
-      startWith(false)
-    );
-  }
+  ) { }
 
   ngOnInit() {
     // Unread chat count
@@ -72,26 +65,6 @@ export class HomePages implements OnInit, OnDestroy {
       })
     );
 
-    // Current user
-    this.sub.add(
-      this.authService.$me.subscribe(me => {
-        this.currentUser = me;
-
-        // If user is authenticated, load the server cart
-        if (me) {
-          this.cartService.getCart(true).subscribe({
-            next: (res: any) => {
-              if (res?.data) {
-                this.cartService.updateCartItems(res.data);
-              }
-            },
-            error: () => { } // silent fail
-          });
-        }
-      })
-    );
-
-    // Cart count - updates whenever items are added
     this.sub.add(
       this.cartService.cartCount$.subscribe(count => {
         this.cartCount = count;
@@ -115,28 +88,9 @@ export class HomePages implements OnInit, OnDestroy {
     this.selectedCategoryId = id;
   }
 
+
   openDrawer(drawer: 'products' | 'cart' | 'ai-chat') {
     this.activeDrawer = drawer;
-
-    // Refresh cart data whenever opening the cart drawer
-    if (drawer === 'cart' && this.currentUser) {
-      this.cartService.getCart(true).subscribe({
-        next: (res: any) => {
-          if (res?.data) {
-            this.cartService.updateCartItems(res.data);
-          }
-        }
-      });
-    }
-    // No extra logic needed for 'ai-chat' drawer
-  }
-
-  logout() {
-    this.authService.logout().subscribe({
-      error: () => {
-
-      },
-    });
   }
 
 

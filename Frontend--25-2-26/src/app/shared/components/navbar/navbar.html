@@ -1,7 +1,91 @@
-<!-- <nav>
-    @if(isLoggedIn){
-    <span>
-        Welcome User
-    </span>
-    }
-</nav> -->
+<!-- ====== TOP NAVBAR ====== -->
+<header class="hp-navbar">
+    <div class="hp-navbar-brand">
+        <span class="hp-brand-icon">🛍️</span>
+        <span class="hp-brand-name">Masters Shop</span>
+    </div>
+
+    <!-- Drawer toggle buttons -->
+    <nav class="hp-navbar-actions">
+        <!-- Products -->
+        <button type="button" class="hp-nav-tab" [class.active]="activeDrawer === 'products'"
+            (click)="openDrawer('products')" id="nav-products-tab">
+            <span class="material-icons">grid_view</span>
+            Products
+        </button>
+
+        <!-- Cart-->
+        <button type="button" class="hp-nav-tab" [class.active]="activeDrawer === 'cart'" (click)="openDrawer('cart')"
+            id="nav-cart-tab">
+            <span class="material-icons">shopping_cart</span>
+            Cart
+            @if (cartCount > 0) {
+            <span class="hp-cart-badge">{{ cartCount }}</span>
+            }
+
+        </button>
+
+
+
+        <div style="position: relative; display: inline-block;">
+
+            <!-- 🔔 The Bell Icon -->
+            <button (click)="toggleDropdown()"
+                style="background: none; border: none; font-size: 24px; cursor: pointer; position: relative;">
+                🔔
+                <!-- The Red Notification Badge -->
+                @if(notifications.length > 0) {
+                <span
+                    style="position: absolute; top: 0; right: 0; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 12px;">
+                    {{ notifications.length }}
+                </span>
+                }
+            </button>
+            <!-- The Dropdown List -->
+            @if(showDropdown) {
+            <div
+                style="position: absolute; right: 0; top: 40px; width: 250px; background: white; border: 1px solid #ccc; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; padding: 8px; z-index: 1000;">
+                <h4 style="margin-top: 0; display: inline-block;">Notifications</h4>
+                <button (click)="clearNotifications()"
+                    style="float: right; cursor: pointer; border: none; background: transparent; color: red;">Clear</button>
+                <hr>
+
+                @if(notifications.length === 0) {
+                <p style="font-size: 14px; color: gray;">No new notifications</p>
+                }
+                @for(notif of notifications; track $index) {
+                <div style="margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
+                    <strong>{{ notif.title }}</strong>
+                    <p style="margin: 5px 0; font-size: 14px;">{{ notif.message }}</p>
+                </div>
+                }
+            </div>
+            }
+        </div>
+
+
+
+        <!-- User welcome & Logout -->
+        @if (currentUser) {
+        <span class="hp-user-greeting">Hi, {{ currentUser.name || currentUser.email }}</span>
+        }
+        @if (isLoggedIn$ | async) {
+        <button type="button" class="hp-logout-btn" (click)="logout()" id="logout-btn">
+            <span class="material-icons" aria-hidden="true">logout</span>
+            <span>Logout</span>
+        </button>
+        } @else {
+        <a class="hp-login-link" routerLink="/auth/login" id="login-link">
+            <span class="material-icons" aria-hidden="true">login</span>
+            <span>Login</span>
+        </a>
+        }
+
+        <!-- AI Chat-->
+        <button type="button" class="hp-nav-tab" [class.active]="activeDrawer === 'ai-chat'"
+            (click)="openDrawer('ai-chat')" id="nav-ai-chat-tab">
+            <span class="material-icons">smart_toy</span>
+            AI Chat
+        </button>
+    </nav>
+</header>

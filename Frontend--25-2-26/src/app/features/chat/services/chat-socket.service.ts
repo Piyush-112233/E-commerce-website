@@ -10,11 +10,20 @@ export class ChatSocketService {
     private url = 'http://localhost:3000';
 
     connect(token?: string) {
+        // 👇 Prevent multiple connections if it's already connected!
+        if (this.socket) {
+            // If the user logs in after the socket was rejected, we must reconnect
+            if (!this.socket.connected) {
+                this.socket.connect();
+            }
+            return;
+        }
+
         this.socket = io(this.url, {
             path: '/socket.io',
             withCredentials: true,
             transports: ['websocket'],
-            auth: token ? { token } : {},
+            auth: token ? { token } : {}, // Optional: can still accept a token param if passed explicitly
         });
         // console.log("connect");
     }
@@ -60,5 +69,22 @@ export class ChatSocketService {
         if (this.socket) {
             this.socket.disconnect();
         }
+    }
+
+    // add a new notification listener function 
+    onNewNotification(): Observable<any> {
+        return new Observable((observer) => {
+
+            // 👇 Force a connection if the navbar loads before the chat!
+            if (!this.socket) {
+                this.connect();
+            }
+
+            const handler = (payload: any) => observer.next(payload);
+            this.socket.on('notification:new', handler);
+            return () => {
+                if (this.socket) this.socket.off('notification:new', handler);
+            }
+        })
     }
 }

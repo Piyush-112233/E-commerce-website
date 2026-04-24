@@ -44,6 +44,9 @@ export const streamAiChat = async (req, res) => {
             const token = chunk || "";
             fullAiResponse += token;
 
+            // Artificial delay to create the ChatGPT typing effect (e.g., 15-20 milliseconds)
+            await new Promise(resolve => setTimeout(resolve, 20));
+
             // Send SSE formatted chunk (Standard format for Server-Sent Events)
             res.write(`data: ${JSON.stringify({ text: token })}\n\n`);
         }

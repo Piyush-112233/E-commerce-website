@@ -41,6 +41,7 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   }
 
   private maintainingScroll = false;
+  
   async onScroll(event: Event) {
     const el = event.target as HTMLElement;
     if (el.scrollTop === 0 && this.messages.length > 0) {

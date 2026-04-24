@@ -1,60 +1,7 @@
-<!-- ====== TOP NAVBAR ====== -->
-<header class="hp-navbar">
-  <div class="hp-navbar-brand">
-    <span class="hp-brand-icon">🛍️</span>
-    <span class="hp-brand-name">Masters Shop</span>
-  </div>
-
-  <!-- Drawer toggle buttons -->
-  <nav class="hp-navbar-actions">
-    <!-- Products -->
-    <button type="button" class="hp-nav-tab" [class.active]="activeDrawer === 'products'"
-      (click)="openDrawer('products')" id="nav-products-tab">
-      <span class="material-icons">grid_view</span>
-      Products
-    </button>
-
-    <!-- Cart-->
-    <button type="button" class="hp-nav-tab" [class.active]="activeDrawer === 'cart'" (click)="openDrawer('cart')"
-      id="nav-cart-tab">
-      <span class="material-icons">shopping_cart</span>
-      Cart
-      @if (cartCount > 0) {
-      <span class="hp-cart-badge">{{ cartCount }}</span>
-      }
-    </button>
-
-
-    <!-- User welcome & Logout -->
-    @if (currentUser) {
-    <span class="hp-user-greeting">Hi, {{ currentUser.name || currentUser.email }}</span>
-    }
-    @if (isLoggedIn$ | async) {
-    <button type="button" class="hp-logout-btn" (click)="logout()" id="logout-btn">
-      <span class="material-icons" aria-hidden="true">logout</span>
-      <span>Logout</span>
-    </button>
-    } @else {
-    <a class="hp-login-link" routerLink="/auth/login" id="login-link">
-      <span class="material-icons" aria-hidden="true">login</span>
-      <span>Login</span>
-    </a>
-    }
-
-    <!-- AI Chat-->
-    <button type="button" class="hp-nav-tab" [class.active]="activeDrawer === 'ai-chat'" (click)="openDrawer('ai-chat')"
-      id="nav-ai-chat-tab">
-      <span class="material-icons">smart_toy</span>
-      AI Chat
-    </button>
-  </nav>
-</header>
-
-
+<app-navbar [activeDrawer]="activeDrawer" (drawerChange)="openDrawer($event)"></app-navbar>
 
 <!-- ====== MAIN LAYOUT: Sidebar + Content ====== -->
 <div class="hp-layout">
-
 
   <!-- PRODUCTS DRAWER -->
   <aside class="hp-drawer" [class.open]="activeDrawer === 'products'" id="products-drawer">
