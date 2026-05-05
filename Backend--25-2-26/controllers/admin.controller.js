@@ -119,10 +119,15 @@ export const productAdd = async (req, res) => {
             console.log("------>BACKEND: Emitting new notification via Socket.io!");
 
             global.io.emit("notification:new", {
+                _id: "global_" + Date.now(),
                 title: "New Product Alert! 🚀",
                 message: `${product.name} is now available in the store!`,
-                time: new Date()
+                type: "promo",
+                link: "/",
+                isRead: false,
+                createdAt: new Date()
             });
+            global.io.emit("product:updated");
         } else {
             console.log("-------->BACKEND: global.io is UNDEFINED!");
         }
@@ -170,10 +175,15 @@ export const productUpdate = async (req, res) => {
             const productName = req.body.name || update.name || "A product";
             
             global.io.emit("notification:new", {
-                title: "New Product Alert! 🚀",
-                message: `${productName} is now available in the store!`,
-                time: new Date()
+                _id: "global_" + Date.now(),
+                title: "Product Updated! 🚀",
+                message: `${productName} was just updated!`,
+                type: "promo",
+                link: "/",
+                isRead: false,
+                createdAt: new Date()
             });
+            global.io.emit("product:updated");
         } else {
             console.log("-------->BACKEND: global.io is UNDEFINED!");
         }
@@ -198,6 +208,9 @@ export const productDelete = async (req, res) => {
     try {
         const id = req.params.id;
         await ProductModel.findByIdAndDelete({ _id: id });
+        if (global.io) {
+            global.io.emit("product:updated");
+        }
         res.status(201).json(
             new ApiResponse(
                 200,

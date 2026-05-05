@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { ChatSocketService } from '../chat/services/chat-socket.service';
+import { Router } from '@angular/router';
 
 interface AppNotification {
   _id: string;
@@ -37,7 +38,8 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
 
   constructor(
     private http: HttpClient,
-    private socketService: ChatSocketService
+    private socketService: ChatSocketService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -83,11 +85,21 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
 
   onNotificationClick(n: AppNotification) {
     if (!n.isRead) this.markRead(n);
-    if (n.link) window.location.href = n.link;
-    else this.isOpen = false;
+    if (n.link) {
+      this.router.navigateByUrl(n.link);
+      this.isOpen = false;
+    } else {
+      this.isOpen = false;
+    }
   }
 
   markRead(n: AppNotification) {
+    if (!n._id || n._id.startsWith('global_')) {
+      n.isRead = true;
+      this.unreadCount = Math.max(0, this.unreadCount - 1);
+      return;
+    }
+    
     this.http.patch(`${this.apiUrl}/read/${n._id}`, {}, { withCredentials: true })
       .subscribe(() => {
         n.isRead = true;

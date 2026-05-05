@@ -87,4 +87,18 @@ export class ChatSocketService {
             }
         })
     }
+
+    // add product updated listener
+    onProductUpdated(): Observable<void> {
+        return new Observable((observer) => {
+            if (!this.socket) {
+                this.connect();
+            }
+            const handler = () => observer.next();
+            this.socket.on('product:updated', handler);
+            return () => {
+                if (this.socket) this.socket.off('product:updated', handler);
+            }
+        });
+    }
 }

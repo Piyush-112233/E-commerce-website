@@ -11,6 +11,7 @@ import { AiChatPage } from '../../../chat/pages/ai-chat-page/ai-chat-page';
 // import { AsyncPipe } from '@angular/common';
 // import { RouterLink } from '@angular/router';
 import { Navbar } from '../../../../shared/components/navbar/navbar';
+import { ChatSocketService } from '../../../chat/services/chat-socket.service';
 
 @Component({
   selector: 'app-home-pages',
@@ -51,7 +52,8 @@ export class HomePages implements OnInit, OnDestroy {
   constructor(
     private chatFacade: ChatFacadeService,
     private productService: ProductService,
-    private cartService: CartService
+    private cartService: CartService,
+    private socketService: ChatSocketService
   ) { }
 
   ngOnInit() {
@@ -71,13 +73,21 @@ export class HomePages implements OnInit, OnDestroy {
       })
     );
 
-    // Subscribe to product changes (when admin adds new products)
+    // Subscribe to product changes (when admin adds new products) locally
     this.sub.add(
       this.productService.onProductsChange().subscribe(() => {
-        console.log('Products changed, refreshing list and categories...');
-        // Reset category filter to show all products when new ones are added
+        console.log('Products changed locally, refreshing list and categories...');
         this.selectedCategoryId = null;
-        // Refresh both products and categories
+        this.fetchProducts();
+        this.fetchCategories();
+      })
+    );
+
+    // Subscribe to real-time global product changes via Socket.IO
+    this.sub.add(
+      this.socketService.onProductUpdated().subscribe(() => {
+        console.log('Global product update received via Socket, refreshing list...');
+        // Refresh products and categories immediately to reflect new DOM state
         this.fetchProducts();
         this.fetchCategories();
       })
