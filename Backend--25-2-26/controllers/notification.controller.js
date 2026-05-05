@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import NotificationModel from "../model/notification.model.js";
 import notificationQueue from "../bullMq/queue.js/notification.queue.js";
 import UserModel from "../model/user.model.js";
@@ -45,14 +46,26 @@ export const sendNotification = async (req, res) => {
             return res.status(400).json({ success: false, message: "userId, title and message are required" });
         }
 
+        // Validate userId format early to avoid silent DB cast errors
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            console.error("sendNotification: invalid userId", userId);
+            return res.status(400).json({ success: false, message: "Invalid userId" });
+        }
+
         // 1. Save notification to DB (this is what the bell icon reads)
+        console.log("sendNotification: creating notification", { userId, title, message, type, link });
+        const validTypes = ["coupon", "order", "promo", "general"];
+        const notificationType = validTypes.includes(type) ? type : "general";
+
         const notification = await NotificationModel.create({
             userId,
             title,
             message,
-            type: type || "general",
+            type: notificationType,
+
             link
         });
+        console.log("sendNotification: notification created", notification?._id);
 
         // 2. Real-time update via Socket.IO (if user is currently ONLINE)
         if (global.io) {
@@ -60,7 +73,7 @@ export const sendNotification = async (req, res) => {
                 _id: notification._id,
                 title,
                 message,
-                type: type || "general",
+                type: notificationType,
                 link,
                 isRead: false,
                 createdAt: notification.createdAt
@@ -68,12 +81,13 @@ export const sendNotification = async (req, res) => {
         }
 
         // 3. Add to BullMQ queue → worker sends Web Push (works when OFFLINE too)
-        await notificationQueue.add("PushNotification", {
+        // We do not await this, so if Redis is down, it doesn't hang the API response
+        notificationQueue.add("PushNotification", {
             userId,
             title,
             message,
             link
-        });
+        }).catch(err => console.error("Queue error:", err));
 
         res.status(201).json({ success: true, notification });
     } catch (error) {
