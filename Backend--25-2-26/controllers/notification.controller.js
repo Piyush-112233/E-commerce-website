@@ -26,6 +26,7 @@ export const savePushSubscription = async (req, res) => {
         if (!subscription || !subscription.endpoint) {
             return res.status(400).json({ success: false, message: "Invalid subscription object" });
         }
+        console.log("save push message", { subscription, userId });
 
         await UserModel.findByIdAndUpdate(userId, { pushSubscription: subscription });
         res.status(200).json({ success: true, message: "Push subscription saved" });
