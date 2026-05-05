@@ -1,0 +1,80 @@
+<div class="bell-wrapper">
+
+  <!-- ===== Bell Button ===== -->
+  <button class="bell-btn" (click)="toggleDropdown($event)" [class.active]="isOpen" aria-label="Notifications">
+    <svg class="bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+    <span *ngIf="unreadCount > 0" class="badge">
+      {{ unreadCount > 99 ? '99+' : unreadCount }}
+    </span>
+  </button>
+
+  <!-- ===== Dropdown Panel ===== -->
+  <div *ngIf="isOpen" class="dropdown" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="dropdown-header">
+      <div class="header-left">
+        <span class="header-title">Notifications</span>
+        <span *ngIf="unreadCount > 0" class="unread-pill">{{ unreadCount }} new</span>
+      </div>
+      <button *ngIf="unreadCount > 0" class="mark-all-btn" (click)="markAllRead($event)">
+        ✓ Mark all read
+      </button>
+    </div>
+
+    <!-- Shimmer loading skeleton -->
+    <div *ngIf="isLoading" class="shimmer-list">
+      <div class="shimmer-item" *ngFor="let i of shimmerItems">
+        <div class="shimmer-icon"></div>
+        <div class="shimmer-lines">
+          <div class="shimmer-line wide"></div>
+          <div class="shimmer-line narrow"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!isLoading && notifications.length === 0" class="empty-state">
+      <span class="empty-icon">🔕</span>
+      <span class="empty-title">You're all caught up!</span>
+      <span class="empty-sub">No notifications yet</span>
+    </div>
+
+    <!-- Notification list -->
+    <div *ngIf="!isLoading && notifications.length > 0" class="notif-list">
+      <div
+        *ngFor="let n of notifications"
+        class="notif-item"
+        [class.unread]="!n.isRead"
+        (click)="onNotificationClick(n)"
+      >
+        <!-- Type icon -->
+        <div class="notif-icon-wrap" [attr.data-type]="n.type">
+          <span class="notif-icon">{{ getTypeIcon(n.type) }}</span>
+          <span *ngIf="!n.isRead" class="unread-dot"></span>
+        </div>
+
+        <!-- Text content -->
+        <div class="notif-body">
+          <div class="notif-title">{{ n.title }}</div>
+          <div class="notif-message">{{ n.message }}</div>
+          <div class="notif-time">{{ getRelativeTime(n.createdAt) }}</div>
+        </div>
+
+        <span class="notif-arrow">›</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div *ngIf="!isLoading && notifications.length > 0" class="dropdown-footer">
+      <button class="view-all-btn" (click)="isOpen = false">
+        View all activity
+      </button>
+    </div>
+
+  </div>
+</div>

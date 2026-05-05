@@ -1,13 +1,30 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
 import { publicApiContext } from '../../http/auth-http-context';
+import { CartService } from '../cartService/cart-service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ProductService {
-  constructor(private http: HttpClient) { }
+  private productsRefresh$ = new Subject<void>();
 
+  constructor(
+    private http: HttpClient,
+    private cartService: CartService
+  ) { }
+
+  // Observable that components can subscribe to for product updates
+  onProductsChange() {
+    return this.productsRefresh$.asObservable();
+  }
+
+  notifyProductsChanged() {
+    this.productsRefresh$.next();
+    // Also notify cart service in case product prices/discounts changed
+    this.cartService.notifyCartChanged();
+  }
 
   //get all products
   getProducts() {
@@ -35,7 +52,9 @@ export class ProductService {
     for (const f of files) ImageUpload.append("images", f);
 
     const url = "http://localhost:3000/api/admin/product"
-    return this.http.post(url, ImageUpload, { withCredentials: true }
+    return this.http.post(url, ImageUpload, { withCredentials: true }).pipe(
+      // Tap into the response and notify
+      // tap(() => this.notifyProductsChanged())
     );
   }
 
@@ -43,13 +62,13 @@ export class ProductService {
   // update products
   updateProducts(productData: any, id: string) {
     const url = `http://localhost:3000/api/admin/product/${id}`
-    return this.http.put(url, productData)
+    return this.http.put(url, productData);
   }
 
   // delete Products
   deleteProducts(id: string) {
     const url = `http://localhost:3000/api/admin/product/${id}`
-    return this.http.delete(url)
+    return this.http.delete(url);
   }
 
 

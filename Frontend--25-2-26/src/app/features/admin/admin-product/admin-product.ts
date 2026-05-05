@@ -145,6 +145,8 @@ export class AdminProduct implements AfterViewInit {
           alert("Product Update")
           this.productForm.reset();
           this.selectedProductById = null
+          // Notify other components about the product change
+          this.productService.notifyProductsChanged();
         },
         error: (error: any) => {
           alert(error?.error?.message || "Not Updated")
@@ -167,6 +169,8 @@ export class AdminProduct implements AfterViewInit {
           this.productForm.reset();
           this.files = [];
           alert("Category Added")
+          // Notify other components about the product change
+          this.productService.notifyProductsChanged();
         },
         error: (error: any) => {
           alert(error?.error?.message || "Product not found")
@@ -199,6 +203,8 @@ export class AdminProduct implements AfterViewInit {
       next: (_data: any) => {
         this.getProduct();
         alert("Product Deleted");
+        // Notify other components about the product change
+        this.productService.notifyProductsChanged();
       },
       error: (_error: any) => {
         alert("Some Error");
@@ -298,6 +304,8 @@ export class AdminProduct implements AfterViewInit {
         this.getProduct();
         this.data = [];
         this.csvColumns = [];
+        // Notify other components about the product change
+        this.productService.notifyProductsChanged();
       },
       error: (err) => {
         console.error(err);

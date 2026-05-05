@@ -35,18 +35,23 @@ export class AddToCartDirective implements OnInit {
     btn.textContent = 'Adding…';
 
     const isAuthenticated = this.authService.isAuthenticated();
+    console.log('Adding to cart:', {
+      productId: this.appAddToCart,
+      quantity: this.quantity,
+      isAuthenticated,
+      product: this.product?.name || 'N/A'
+    });
 
     this.cartService.addToCart(this.appAddToCart, this.quantity, isAuthenticated, this.product).subscribe({
       next: (response: any) => {
-        console.log('Added to cart:', response);
+        console.log('✓ Added to cart successfully:', response);
         this.showToast('✓ Added to cart!', 'success');
         btn.disabled = false;
         btn.textContent = 'Add to Cart';
         this.quantity = 1;
-        
       },
       error: (error: any) => {
-        console.error('Error adding to cart:', error);
+        console.error('✗ Error adding to cart:', error);
         this.showToast('Error adding to cart', 'error');
         btn.disabled = false;
         btn.textContent = 'Add to Cart';

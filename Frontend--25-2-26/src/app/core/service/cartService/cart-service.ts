@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, tap } from 'rxjs';
+import { BehaviorSubject, Observable, of, tap, Subject } from 'rxjs';
 
 export interface CartItem {
   productId: string;
@@ -33,12 +33,23 @@ export class CartService {
   cartCountSubject = new BehaviorSubject<number>(0);
   cartCount$ = this.cartCountSubject.asObservable();
 
+  private cartRefresh$ = new Subject<void>();
+
 
   constructor(private http: HttpClient) {
     const localCart = this.getLocalCart();
     if (localCart && localCart.length > 0) {
       this.cartCountSubject.next(localCart.reduce((sum, item) => sum + item.quantity, 0));
     }
+  }
+
+  // Observable that components can subscribe to for cart updates
+  onCartChange() {
+    return this.cartRefresh$.asObservable();
+  }
+
+  notifyCartChanged() {
+    this.cartRefresh$.next();
   }
 
   // Get local cart from localStorage helper
@@ -82,6 +93,7 @@ export class CartService {
     if (isAuthenticated) {
       return this.http.post(`${this.cartUrl}/add`, { productId, quantity }).pipe(
         tap((response: any) => {
+          console.log('Add to cart response:', response);
           const cart = response?.data?.cart ?? response?.cart ?? response?.data;
           if (cart && Array.isArray(cart.items) && typeof cart.totalQuantity === 'number') {
             this.updateCartItems(cart);
@@ -89,14 +101,14 @@ export class CartService {
             // Fallback for APIs that don't return the full cart object.
             this.cartCountSubject.next(this.cartCountSubject.getValue() + quantity);
           }
+          // Notify that cart has changed
+          this.notifyCartChanged();
         })
       );
     } else {
       // For non-authenticated users, use local storage
       const localCart = this.getLocalCart();
-      // console.log("--------2", localCart);
       const existingItem = localCart.find(item => item.productId === productId);
-      // console.log("------3", existingItem);
 
       if (existingItem) {
         existingItem.quantity += quantity;
@@ -111,6 +123,21 @@ export class CartService {
       }
       this.saveLocalCart(localCart);
       this.updateCartItemsCount();
+      
+      // Update cartSubject for display
+      const items = this.getLocalCart();
+      const updatedCart: Cart = {
+        _id: 'local',
+        userId: 'guest',
+        items,
+        totalQuantity: items.reduce((s, i) => s + i.quantity, 0),
+        totalPrice: items.reduce((s, i) => s + i.price * i.quantity, 0),
+        totalDiscount: items.reduce((s, i) => s + (i.discount || 0) * i.quantity, 0),
+      };
+      this.cartSubject.next(updatedCart);
+      
+      // Notify that cart has changed
+      this.notifyCartChanged();
       return of({ success: true, message: 'Added to cart (local)' });
     }
   }
@@ -127,12 +154,18 @@ export class CartService {
   // Update cart item
   updateCartItemsItem(productId: string, quantity: number, isAuthenticated: boolean): Observable<any> {
     if (isAuthenticated) {
-      return this.http.put(`${this.cartUrl}/update`, { productId, quantity });
+      return this.http.put(`${this.cartUrl}/update`, { productId, quantity }).pipe(
+        tap((response: any) => {
+          const cart = response?.data?.cart ?? response?.cart ?? response?.data;
+          if (cart && Array.isArray(cart.items) && typeof cart.totalQuantity === 'number') {
+            this.updateCartItems(cart);
+          }
+          this.notifyCartChanged();
+        })
+      );
     } else {
       const localCart = this.getLocalCart();
-      // console.log("------4", localCart);
       const item = localCart.find(i => i.productId === productId);
-      // console.log("------5", item);
       if (item) {
         item.quantity = quantity;
         if (quantity <= 0) {
@@ -140,6 +173,19 @@ export class CartService {
         } else {
           this.saveLocalCart(localCart);
           this.updateCartItemsCount();
+          
+          // Update cartSubject for display
+          const items = this.getLocalCart();
+          const updatedCart: Cart = {
+            _id: 'local',
+            userId: 'guest',
+            items,
+            totalQuantity: items.reduce((s, i) => s + i.quantity, 0),
+            totalPrice: items.reduce((s, i) => s + i.price * i.quantity, 0),
+            totalDiscount: items.reduce((s, i) => s + (i.discount || 0) * i.quantity, 0),
+          };
+          this.cartSubject.next(updatedCart);
+          this.notifyCartChanged();
         }
       }
       return of({ success: true });
@@ -149,13 +195,33 @@ export class CartService {
   // remove from cart
   removeFromCart(productId: string, isAuthenticated: boolean): Observable<any> {
     if (isAuthenticated) {
-      return this.http.delete(`${this.cartUrl}/remove`, { body: { productId } });
+      return this.http.delete(`${this.cartUrl}/remove`, { body: { productId } }).pipe(
+        tap((response: any) => {
+          const cart = response?.data?.cart ?? response?.cart ?? response?.data;
+          if (cart && Array.isArray(cart.items) && typeof cart.totalQuantity === 'number') {
+            this.updateCartItems(cart);
+          }
+          this.notifyCartChanged();
+        })
+      );
     } else {
       let localCart = this.getLocalCart();
-      // console.log("------6", localCart);
       localCart = localCart.filter(item => item.productId !== productId);
       this.saveLocalCart(localCart);
       this.updateCartItemsCount();
+      
+      // Update cartSubject for display
+      const items = this.getLocalCart();
+      const updatedCart: Cart = {
+        _id: 'local',
+        userId: 'guest',
+        items,
+        totalQuantity: items.reduce((s, i) => s + i.quantity, 0),
+        totalPrice: items.reduce((s, i) => s + i.price * i.quantity, 0),
+        totalDiscount: items.reduce((s, i) => s + (i.discount || 0) * i.quantity, 0),
+      };
+      this.cartSubject.next(updatedCart);
+      this.notifyCartChanged();
       return of({ success: true });
     }
   }
@@ -163,10 +229,18 @@ export class CartService {
   // clear cart
   clearCart(isAuthenticated: boolean): Observable<any> {
     if (isAuthenticated) {
-      return this.http.delete(`${this.cartUrl}/clear`);
+      return this.http.delete(`${this.cartUrl}/clear`).pipe(
+        tap(() => {
+          this.cartSubject.next(null);
+          this.cartCountSubject.next(0);
+          this.notifyCartChanged();
+        })
+      );
     } else {
       this.saveLocalCart([]);
       this.updateCartItemsCount();
+      this.cartSubject.next(null);
+      this.notifyCartChanged();
       return of({ success: true });
     }
   }
@@ -186,12 +260,16 @@ export class CartService {
   // Sync local cart to DB then clear local storage (call after login)
   syncAndClearLocal(): Observable<any> {
     const localCart = this.getLocalCart();
-    // console.log("------8");
     if (localCart.length > 0) {
       return this.http.post(`${this.cartUrl}/sync`, { localCart }).pipe(
-        tap(() => {
+        tap((response: any) => {
+          const cart = response?.data?.cart ?? response?.cart ?? response?.data;
           this.saveLocalCart([]);
           this.cartCountSubject.next(0);
+          if (cart && Array.isArray(cart.items) && typeof cart.totalQuantity === 'number') {
+            this.updateCartItems(cart);
+          }
+          this.notifyCartChanged();
         })
       );
     }

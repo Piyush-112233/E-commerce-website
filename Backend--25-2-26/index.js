@@ -16,10 +16,13 @@ import chatRouter from "./routes/chatRouter.js";
 import aiChatRouter from "./routes/aiChat.router.js";
 import cartAndWishlistRouter from "./routes/CartAndWishlistRouter.js";
 import paymentRouter from "./routes/payment.router.js";
+import notificationRouter from "./routes/notification.router.js";
 import { setupSocketIO } from "./socket.io/server.js";
 import { createVectorStore, createStreamingChain } from "./utils/ai.helpers.js";
 
-import './bullMq/worker.js/email.worker.js'
+// Workers — start background processors
+import './bullMq/worker.js/email.worker.js';
+import './bullMq/worker.js/notification.worker.js';
 
 const app = express();
 const PORT = process.env.PORT || 6000;
@@ -29,7 +32,7 @@ app.use(cookieParser())
 app.use(cors({
     origin: "http://localhost:4200",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(express.json({ limit: "16kb" }));
@@ -47,6 +50,7 @@ app.use('/api', chatRouter)
 app.use('/api', cartAndWishlistRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/ai', aiChatRouter);
+app.use('/api/notifications', notificationRouter);
 
 // Create a single HTTP server for both Express and Socket.IO
 const server = http.createServer(app);

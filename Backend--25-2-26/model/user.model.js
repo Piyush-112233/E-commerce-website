@@ -57,6 +57,10 @@ const userSchema = new mongoose.Schema({
     refreshToken: {
         type: String
     },
+    pushSubscription: {
+        type: Object,  // { endpoint, expirationTime, keys: { p256dh, auth } }
+        default: null
+    },
     isAdmin: {
         type: Boolean
     }

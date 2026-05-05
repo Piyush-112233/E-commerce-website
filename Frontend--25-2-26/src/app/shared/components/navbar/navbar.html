@@ -26,42 +26,9 @@
         </button>
 
 
+        <!-- 🔔 Notification Bell -->
+        <app-notification-bell></app-notification-bell>
 
-        <div style="position: relative; display: inline-block;">
-
-            <!-- 🔔 The Bell Icon -->
-            <button (click)="toggleDropdown()"
-                style="background: none; border: none; font-size: 24px; cursor: pointer; position: relative;">
-                🔔
-                <!-- The Red Notification Badge -->
-                @if(notifications.length > 0) {
-                <span
-                    style="position: absolute; top: 0; right: 0; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 12px;">
-                    {{ notifications.length }}
-                </span>
-                }
-            </button>
-            <!-- The Dropdown List -->
-            @if(showDropdown) {
-            <div
-                style="position: absolute; right: 0; top: 40px; width: 250px; background: white; border: 1px solid #ccc; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; padding: 8px; z-index: 1000;">
-                <h4 style="margin-top: 0; display: inline-block;">Notifications</h4>
-                <button (click)="clearNotifications()"
-                    style="float: right; cursor: pointer; border: none; background: transparent; color: red;">Clear</button>
-                <hr>
-
-                @if(notifications.length === 0) {
-                <p style="font-size: 14px; color: gray;">No new notifications</p>
-                }
-                @for(notif of notifications; track $index) {
-                <div style="margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
-                    <strong>{{ notif.title }}</strong>
-                    <p style="margin: 5px 0; font-size: 14px;">{{ notif.message }}</p>
-                </div>
-                }
-            </div>
-            }
-        </div>
 
 
 

@@ -1,11 +1,12 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, OnDestroy, Output } from '@angular/core';
 import { Cart, CartItem, CartService } from '../../../core/service/cartService/cart-service';
 import { AuthService } from '../../../core/service/authService/auth-service';
+import { ProductService } from '../../../core/service/productServices/product-service';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PaymentConfig, PaymentService } from '../../../core/service/paymentService/payment-service';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-cart-summary',
@@ -14,7 +15,7 @@ import { Subject } from 'rxjs';
   templateUrl: './cart-summary.html',
   styleUrl: './cart-summary.css',
 })
-export class CartSummary implements OnInit {
+export class CartSummary implements OnInit, OnDestroy {
   cart: Cart | null = null;
   cartCount: number = 0;
   isAuthenticated: boolean = false;
@@ -28,10 +29,12 @@ export class CartSummary implements OnInit {
 
   @Output() onContinue = new EventEmitter<void>();
   private destroy$ = new Subject<void>();
+  private sub = new Subscription();
 
   constructor(
     private cartService: CartService,
     private authService: AuthService,
+    private productService: ProductService,
     private paymentService: PaymentService,
     private router: Router
   ) { }
@@ -39,30 +42,62 @@ export class CartSummary implements OnInit {
   ngOnInit(): void {
     // 🛡️ REQUISITE: Subscribe to the auth status to handle page refreshes accurately.
     // Instead of checking once, we react whenever the session check (loadMe) completes.
-    this.authService.$me.subscribe(user => {
-      this.isAuthenticated = !!user;
-      console.log("CartSummary Auth Status Updated:", this.isAuthenticated);
+    this.sub.add(
+      this.authService.$me.subscribe(user => {
+        this.isAuthenticated = !!user;
+        console.log("CartSummary Auth Status Updated:", this.isAuthenticated);
 
-      this.getUserDetails();
-      this.loadCart();
-    });
+        this.getUserDetails();
+        this.loadCart();
+      })
+    );
 
-    this.cartService.cart$.subscribe((cart: Cart | null) => {
-      this.cart = cart;
-    });
+    this.sub.add(
+      this.cartService.cart$.subscribe((cart: Cart | null) => {
+        this.cart = cart;
+      })
+    );
 
-    this.cartService.cartCount$.subscribe((count: number) => {
-      this.cartCount = count;
-    });
+    this.sub.add(
+      this.cartService.cartCount$.subscribe((count: number) => {
+        this.cartCount = count;
+      })
+    );
+
+    // Subscribe to cart changes (when items are added, removed, updated)
+    this.sub.add(
+      this.cartService.onCartChange().subscribe(() => {
+        console.log('Cart changed, reloading cart...');
+        this.loadCart();
+      })
+    );
+
+    // Subscribe to product changes (when admin updates product prices, discounts, etc.)
+    this.sub.add(
+      this.productService.onProductsChange().subscribe(() => {
+        console.log('Products changed, refreshing cart...');
+        this.loadCart();
+      })
+    );
 
     // Subscribe to payment status updates
-    this.paymentService.getPaymentSuccess().subscribe((response) => {
-      this.handlePaymentSuccess(response);
-    });
+    this.sub.add(
+      this.paymentService.getPaymentSuccess().subscribe((response) => {
+        this.handlePaymentSuccess(response);
+      })
+    );
 
-    this.paymentService.getPaymentError().subscribe((error) => {
-      this.handlePaymentError(error);
-    });
+    this.sub.add(
+      this.paymentService.getPaymentError().subscribe((error) => {
+        this.handlePaymentError(error);
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.sub.unsubscribe();
   }
 
 

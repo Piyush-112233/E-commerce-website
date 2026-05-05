@@ -4,6 +4,7 @@ import { checkPasswordValidation } from '../../validators/checkPassword.Validato
 import { AuthService } from '../../../../core/service/authService/auth-service';
 import { CartService } from '../../../../core/service/cartService/cart-service';
 import { Router, RouterLink } from '@angular/router';
+import { WebPushService } from '../../../../core/service/web-push/web-push.service';
 
 @Component({
   selector: 'app-login-pages',
@@ -16,7 +17,8 @@ export class LoginPages {
     private LoginDetails: FormBuilder,
     private auth: AuthService,
     private cartService: CartService,
-    private router: Router
+    private router: Router,
+    private webPushService: WebPushService   // ✅ injected here
   ) { }
 
   loginForm: any
@@ -40,9 +42,15 @@ export class LoginPages {
     this.auth.getLoginDetails(value?.email, value?.password).subscribe({
       next: (res: any) => {
         alert("Login Successfully");
-        // Store accessToken for Socket.IO fallback auth (backend also uses cookies).
+
+        // Store accessToken for Socket.IO fallback auth (backend also uses cookies)
         const token = res?.data?.accessToken ?? res?.accessToken;
         if (token) localStorage.setItem('accessToken', token);
+
+        // ✅ Setup Web Push notifications after successful login
+        // This registers the service worker, asks permission, and saves
+        // the browser's push subscription to your backend DB
+        this.webPushService.setupPushNotifications();
 
         // Sync any guest cart items to the database, then clear local storage
         this.cartService.syncAndClearLocal().subscribe({
@@ -54,23 +62,17 @@ export class LoginPages {
           next: (me) => {
             if (me?.role === 'admin') this.router.navigateByUrl('/admin');
             else this.router.navigateByUrl('/');
-            console.log('Me', me);
           },
           error: () => this.router.navigateByUrl('/auth/login')
         });
-        console.log("------")
       },
       error: (_error: any) => {
-        // console.log("Login error full:",_error.data)
         alert("Login failed")
       }
-
-    })
-
+    });
   }
+
   loginWithGoogle() {
-    window.location.href = "http://localhost:3000/auth/google", "_self"
-    console.log(window.open("http://localhost:3000/auth/google", "_self"))
+    window.location.href = "http://localhost:3000/auth/google"
   }
-
 }

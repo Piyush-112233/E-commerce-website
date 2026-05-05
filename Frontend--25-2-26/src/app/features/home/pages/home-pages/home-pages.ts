@@ -71,6 +71,18 @@ export class HomePages implements OnInit, OnDestroy {
       })
     );
 
+    // Subscribe to product changes (when admin adds new products)
+    this.sub.add(
+      this.productService.onProductsChange().subscribe(() => {
+        console.log('Products changed, refreshing list and categories...');
+        // Reset category filter to show all products when new ones are added
+        this.selectedCategoryId = null;
+        // Refresh both products and categories
+        this.fetchProducts();
+        this.fetchCategories();
+      })
+    );
+
     this.fetchCategories();
     this.fetchProducts();
   }
