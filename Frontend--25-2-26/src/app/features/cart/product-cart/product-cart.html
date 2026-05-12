@@ -11,22 +11,24 @@
 
   <div class="product-info">
     <h3>{{ product.name }}</h3>
-    <p class="description">{{ product.description | slice:0:50 }}...</p>
+    <!-- <p class="description">{{ product.description | slice:0:50 }}...</p> -->
 
-    <div class="price-section">
-      <span class="price">₹{{ getDiscountedPrice().toFixed(2) }}</span>
-      <span *ngIf="product.discount > 0" class="original-price">₹{{ product.price.toFixed(2) }}</span>
+    <div class="product-actions">
+      <div class="price-section">
+        <span class="price">₹{{ getDiscountedPrice().toFixed(2) }}</span>
+        <span *ngIf="product.discount > 0" class="original-price">₹{{ product.price.toFixed(2) }}</span>
+      </div>
+
+      <div class="quantity-selector">
+        <button (click)="quantity = quantity > 1 ? quantity - 1 : 1" type="button" class="qty-btn">-</button>
+        <input type="number" [(ngModel)]="quantity" min="1" class="qty-input">
+        <button (click)="quantity = quantity + 1" type="button" class="qty-btn">+</button>
+      </div>
+
+      <button appAddToCart [appAddToCart]="product._id" [product]="product" [quantity]="quantity" class="btn-add-to-cart"
+        type="button">
+        Add to Cart
+      </button>
     </div>
-
-    <div class="quantity-selector">
-      <button (click)="quantity = quantity > 1 ? quantity - 1 : 1" type="button" class="qty-btn">-</button>
-      <input type="number" [(ngModel)]="quantity" min="1" class="qty-input">
-      <button (click)="quantity = quantity + 1" type="button" class="qty-btn">+</button>
-    </div>
-
-    <button appAddToCart [appAddToCart]="product._id" [product]="product" [quantity]="quantity" class="btn-add-to-cart"
-      type="button">
-      Add to Cart
-    </button>
   </div>
 </div>

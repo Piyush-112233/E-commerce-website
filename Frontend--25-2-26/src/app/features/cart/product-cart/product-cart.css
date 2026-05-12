@@ -97,8 +97,15 @@
   flex-grow: 1;
 }
 
+.product-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .price-section {
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .price {
@@ -117,7 +124,7 @@
 .quantity-selector {
   display: flex;
   gap: 5px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   align-items: center;
 }
 
@@ -157,7 +164,7 @@
   cursor: pointer;
   font-weight: bold;
   transition: background 0.3s;
-  margin-top: auto;
+  margin-top: 0;
 }
 
 .btn-add-to-cart:hover {
