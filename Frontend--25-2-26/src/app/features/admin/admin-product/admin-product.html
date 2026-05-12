@@ -22,7 +22,7 @@
         <!-- file input: NO formControlName -->
         <input type="file" accept="image/*" (change)="onFiles($event)" placeholder="Image URL" />
 
-        <button type="submit">
+        <button type="submit" class="primary-btn">
             {{ isEditMode ? 'Update Product' : 'Add Product' }}
         </button>
 
@@ -62,7 +62,7 @@
         </tbody>
     </table> -->
 
-    <div>
+    <div class="csv-tools">
         <select [(ngModel)]="csvCategoryId">
             <option [ngValue]="null">Select Category for CSV</option>
 
@@ -71,9 +71,11 @@
             }
         </select>
         <input type="file" accept=".csv" (change)="csvImport($event)" />
+    </div>
 
-        @if (data.length) {
-        <table border="1" cellpadding="8" cellspacing="0">
+    @if (data.length) {
+    <div class="csv-preview">
+        <table class="csv-table" border="1" cellpadding="8" cellspacing="0">
             <thead>
                 <tr>
                     @for (col of csvColumns; track col) {
@@ -92,10 +94,10 @@
                 }
             </tbody>
         </table>
-        }
     </div>
+    }
 
-    <div>
+    <div class="csv-actions">
         <button (click)="csvExport()">Export</button>
         <button type="button" (click)="importCsvToProducts()" [disabled]="!data.length || !csvCategoryId">
             Import CSV to Products
@@ -103,7 +105,7 @@
     </div>
 
 
-    <div class="mat-elevation-z8">
+    <div class="mat-elevation-z8 product-table">
         <table mat-table [dataSource]="products">
 
             <!-- Position Column -->
@@ -142,9 +144,9 @@
             </ng-container>
 
             <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef> Actions </th>
+                <th mat-header-cell *matHeaderCellDef class="actions-col"> Actions </th>
                 <!-- <td mat-cell *matCellDef="let element"> {{element.symbol}} </td> -->
-                <td mat-cell *matCellDef="let prod">
+                <td mat-cell *matCellDef="let prod" class="row-actions">
                     <button (click)="editProduct(prod)">Edit</button>
                     <button (click)="deleteProduct(prod._id)">Delete</button>
                 </td>

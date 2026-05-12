@@ -35,7 +35,20 @@
         </thead>
         <tbody>
           <tr *ngFor="let item of cart.items">
-            <td>{{ getProductName(item) }}</td>
+            <td>
+              <div class="cart-product">
+                <div class="cart-product-media" [class.has-image]="getProductImage(item)">
+                  <img *ngIf="getProductImage(item)" [src]="getProductImage(item)" [alt]="getProductName(item)" />
+                  <div *ngIf="!getProductImage(item)" class="cart-product-fallback">
+                    {{ getProductName(item) | slice:0:1 }}
+                  </div>
+                </div>
+                <div class="cart-product-info">
+                  <div class="cart-product-name">{{ getProductName(item) }}</div>
+                  <div class="cart-product-meta">₹{{ getDiscountedPrice(item).toFixed(2) }} each</div>
+                </div>
+              </div>
+            </td>
             <td>₹{{ item.price.toFixed(2) }}</td>
             <td>
               <input 

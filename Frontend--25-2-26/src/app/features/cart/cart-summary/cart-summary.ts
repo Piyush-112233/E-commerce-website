@@ -197,6 +197,20 @@ export class CartSummary implements OnInit, OnDestroy {
     return item.product?.name || 'Product';
   }
 
+  getProductImage(item: CartItem): string | null {
+    if (typeof item.productId === 'object' && item.productId) {
+      const productRef = item.productId as any;
+      return productRef.imageUrl || productRef.image || null;
+    }
+
+    if (item.product) {
+      const productRef = item.product as any;
+      return productRef.imageUrl || productRef.image || null;
+    }
+
+    return null;
+  }
+
   getDiscountedPrice(item: any): number {
     return item.price - (item.discount || 0);
   }

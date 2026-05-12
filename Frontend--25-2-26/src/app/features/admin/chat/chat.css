@@ -1,80 +1,258 @@
+:host {
+    display: block;
+    font-family: var(--font-sans);
+    color: var(--text-strong);
+}
+
 .admin-layout {
     display: grid;
     grid-template-columns: 320px 1fr;
-    gap: 12px;
-    height: 90vh;
-    padding: 12px;
+    gap: 16px;
+    height: calc(100vh - 140px);
+    padding: 16px;
 }
 
 .left-panel,
 .right-panel {
-    border: 1px solid #ddd;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    background: #ffffff;
+    box-shadow: var(--shadow-sm);
+}
+
+.left-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+}
+
+.left-panel h3 {
+    margin: 0;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+}
+
+.filter-row {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-row select {
+    flex: 1;
+    padding: 8px 10px;
     border-radius: 10px;
-    padding: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.filter-row button {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    background: #1d4ed8;
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: 600;
 }
 
 .conv-item {
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 8px;
-    margin: 8px 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin: 0;
     cursor: pointer;
+    background: #ffffff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.conv-item + .conv-item {
+    margin-top: 10px;
+}
+
+.conv-item:hover {
+    border-color: #bfdbfe;
+    box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
 }
 
 .conv-item.active {
-    border-color: #3b82f6;
-    background: #eff6ff;
+    border-color: #1d4ed8;
+    background: #eef2ff;
+}
+
+.conv-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.conv-id {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.conv-status {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 6px;
+}
+
+.conv-preview {
+    display: block;
+    font-size: 12px;
+    color: #475569;
+    margin-top: 6px;
 }
 
 .messages {
-    height: calc(90vh - 180px);
+    height: calc(100% - 132px);
     overflow-y: auto;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 10px;
-    margin: 10px 0;
-    background: #fafafa;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md);
+    padding: 14px;
+    margin: 12px 0;
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.9), #ffffff 45%);
 }
 
 .msg {
-    max-width: 75%;
-    padding: 8px;
-    border-radius: 8px;
-    margin: 8px 0;
+    max-width: min(72%, 70ch);
+    padding: 10px 14px;
+    border-radius: 14px;
+    margin: 10px 0;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid transparent;
+    word-break: break-word;
 }
 
 .msg.customer {
-    background: #e5e7eb;
+    background: #f8fafc;
     margin-right: auto;
+    border-color: #e2e8f0;
+    border-bottom-left-radius: 6px;
 }
 
 .msg.admin {
-    background: #dbeafe;
+    background: #1d4ed8;
+    color: #ffffff;
     margin-left: auto;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-bottom-right-radius: 6px;
 }
 
 .meta {
-    font-size: 12px;
-    opacity: .8;
+    font-size: 11px;
+    opacity: 0.75;
     margin-bottom: 4px;
     display: flex;
     justify-content: space-between;
 }
 
-.input-row {
+.attachments {
+    margin-top: 10px;
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
+}
+
+.attachment-img {
+    max-width: 130px;
+    max-height: 130px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+
+.input-row {
+    display: flex;
+    gap: 10px;
 }
 
 .input-row input {
     flex: 1;
-    padding: 10px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 14px;
+}
+
+.input-row input:focus {
+    outline: none;
+    border-color: #1d4ed8;
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+}
+
+.input-row button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 999px;
+    background: #0f766e;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.input-row button:disabled {
+    background: #cbd5f5;
+    cursor: not-allowed;
 }
 
 .top-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.top-bar-info {
+    display: grid;
+    gap: 4px;
+    font-size: 13px;
+}
+
+.status-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.status-pill[data-status="open"] {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-pill[data-status="assigned"] {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.status-pill[data-status="pending"] {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-pill[data-status="closed"] {
+    background: #e2e8f0;
+    color: #475569;
 }
 
 .actions {
@@ -82,19 +260,49 @@
     gap: 8px;
 }
 
+.actions button {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    background: #1d4ed8;
+    color: #ffffff;
+}
+
+.actions button:last-child {
+    background: #ef4444;
+}
+
+.actions button:disabled {
+    background: #cbd5f5;
+    cursor: not-allowed;
+}
+
 .empty {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #666;
+    color: #64748b;
 }
 
 .unread-badge {
     background: #ef4444;
     color: white;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: bold;
     padding: 2px 8px;
     border-radius: 12px;
     margin-left: 8px;
+}
+
+@media (max-width: 900px) {
+    .admin-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    .messages {
+        height: 420px;
+    }
 }
